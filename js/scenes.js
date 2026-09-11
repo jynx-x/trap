@@ -101,7 +101,7 @@ const SC = (() => {
     [['0;top:12px;width:420px;height:40px', '#07162F'], ['22px;top:4px;width:376px;height:56px', '#07162F'], ['56px;top:0;width:308px;height:64px', '#07162F'],
       ['96px;top:16px;width:228px;height:32px', 'rgba(200,23,47,.55)'], ['140px;top:22px;width:140px;height:20px', 'rgba(255,138,60,.6)']]
       .forEach(([pos, bg]) => div('abs', hole, `left:${pos};background:${bg}`));
-    return { root, cracks, hole, party: party(root, [336, 416, 496, 576], 338, 'normal') };
+    return { root, cracks, hole, party: party(root, [364, 444, 524], 338, 'normal') };
   }
 
   /* ---------------- DUNGEON (trap zone) ---------------- */
@@ -183,7 +183,7 @@ const SC = (() => {
     const hitbox = div('hitbox', btn);
     const label = div('frame dark', root); label.id = 'escLabel';
 
-    const P = party(root, [70, 140, 210, 280], -160, 'dizzy');
+    const P = party(root, [88, 176, 264], -160, 'dizzy');
     P.forEach(c => { c.el.style.zIndex = 5; });
     return { root, door: { rays: doorRays, light, leafL, leafR }, sirenGlow, tablet, tabletGlow, tabletRunes, lava, glow, spikes, props, btn, locks, hitbox, label, party: P };
   }
@@ -208,7 +208,7 @@ const SC = (() => {
     ground(root, 420);
     flowers(root, [[20, 458, 0], [90, 490, 1], [180, 452, 2], [250, 500, 3], [330, 470, 0], [620, 470, 1], [700, 500, 2], [770, 456, 3], [850, 494, 0], [920, 462, 1], [140, 512, 3], [800, 516, 2]]);
     [[190, 400], [720, 404]].forEach(([x, y]) => { const s = div('abs bobble', root, `left:${x}px;top:${y}px;animation-duration:.7s`); sp('slime', 3, s, 0, 0); });
-    const P = party(root, [322, 396, 492, 566], 352, 'happy');
+    const P = party(root, [352, 444, 536], 352, 'happy');
     return { root, party: P };
   }
 

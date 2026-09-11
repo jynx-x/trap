@@ -94,7 +94,6 @@
   const TEAM = [
     { id: 'jin', hair: 'dark', style: 'spiky' },
     { id: 'mia', hair: 'blonde', style: 'pony' },
-    { id: 'leo', hair: 'brown', style: 'bob' },
     { id: 'yuna', hair: 'purple', style: 'buns' },
   ];
   const FACES = ['normal', 'shock', 'panic', 'dizzy', 'focus', 'happy'];

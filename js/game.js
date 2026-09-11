@@ -141,7 +141,7 @@
     let k = 0;
     const chat = setInterval(() => {
       if (!document.body.contains(t)) return clearInterval(chat);
-      M.party[k % 4].say(['♪', '♥', '~', '!'][k % 4], 900); k++;
+      M.party[k % M.party.length].say(['♪', '♥', '~', '!'][k % 4], 900); k++;
     }, 1300);
   }
 
@@ -193,7 +193,7 @@
       await sleep(300);
       SND.thud(); SC.shake(260, true);
       SC.particles(parseInt(c.el.style.left, 10) + 36, 455, 10, ['#6F7FC4', '#5160A6', '#FFF2D2'], { up: true, dist: 50 });
-      c.say(['@_@', '...', '?!', '아야'][i], 1100, i === 3);
+      c.say(['@_@', '?!', '아야'][i], 1100, i === 2);
     }
     await sleep(500);
 
@@ -252,7 +252,7 @@
           p.el.classList.add('searched'); div('x', p.el, '', 'X');
           SND.bonk();
           SC.floatText(p.cx, p.y - 34, `<span style="color:#FF5663">✕</span> ${p.msg}`);
-          const c = D.party[misses % 4]; c.setFace('dizzy'); c.mode('recoil'); setTimeout(() => { if (run === RUN && !S.mission1) c.setFace('focus'); }, 700);
+          const c = D.party[misses % D.party.length]; c.setFace('dizzy'); c.mode('recoil'); setTimeout(() => { if (run === RUN && !S.mission1) c.setFace('focus'); }, 700);
         };
       });
     });
@@ -335,7 +335,7 @@
     D.tablet.classList.add('glow'); D.tabletGlow.style.opacity = 1; D.tabletGlow.classList.add('flicker');
     SND.sparkle(); SC.sparkles(118, 240, 6, 70);
     const hint = div('abs ghost ttl sm gold blink', ui, 'left:40px;top:352px;font-size:12px;z-index:14', '▲ HINT');
-    faces('focus'); D.party[3].say('벽에 뭔가 있어!', 1600, true);
+    faces('focus'); D.party[2].say('벽에 뭔가 있어!', 1600, true);
     await sleep(500);
 
     const win = div('frame window blue win-in', ui, 'left:446px;top:150px;width:470px;height:300px;z-index:15', '<div class="wtitle">RUNE LOCK</div>');
@@ -433,7 +433,7 @@
     // 6. everyone runs for the light
     D.party.forEach((c, i) => setTimeout(() => {
       if (run !== RUN) return;
-      c.mode('walk'); c.say(['가자!', '야호!', '살았다!', '탈출!'][i], 900, true);
+      c.mode('walk'); c.say(['가자!', '야호!', '탈출!'][i], 900, true);
       c.el.style.transition = 'left 1s steps(10), top 1s steps(10), transform 1s steps(10), opacity 1s steps(10)';
       c.el.style.zIndex = 1; c.moveTo(444, 262); c.el.style.transform = 'scale(.5)'; c.el.style.opacity = 0;
     }, 300 + i * 300));
