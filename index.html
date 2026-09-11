@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>TRAP ESCAPE</title>
+  <meta name="description" content="함정에 빠졌다! 3개의 미션을 완료하고 탈출하라 — 1~3분 픽셀 RPG 미니게임">
+  <meta property="og:title" content="TRAP ESCAPE">
+  <meta property="og:description" content="함정에 빠졌다! 3개의 미션을 완료하고 탈출하라.">
+  <meta name="theme-color" content="#07162F">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚨</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/galmuri@2.40.3/dist/galmuri.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="viewport">
+    <div id="stage">
+      <div id="world">
+        <section id="meadow" class="scene"></section>
+        <section id="dungeon" class="scene" hidden></section>
+        <section id="victory" class="scene" hidden></section>
+      </div>
+      <div id="fx"></div>
+      <div id="vignette"></div>
+      <div id="flash"></div>
+      <div id="ui"></div>
+      <button id="mute" class="arcade-sm" aria-label="사운드 끄기/켜기"></button>
+    </div>
+  </div>
+
+  <script src="js/sprites.js"></script>
+  <script src="js/sprites-dungeon.js"></script>
+  <script src="js/sprites-world.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/scenes.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
