@@ -112,6 +112,8 @@ const SC = (() => {
     { id: 'planks', x: 684, y: 432, s: 3, msg: '거미줄뿐이다.' },
     { id: 'chest', x: 804, y: 414, s: 3, msg: '누가 이미 털어갔다!' },
     { id: 'barrel', x: 890, y: 352, s: 3, msg: '찰랑… 물만 들었다.' },
+    { id: 'skullSign', x: 694, y: 306, s: 3, msg: '"위험" 표지판뿐이다.' },
+    { id: 'warn', x: 236, y: 262, s: 3, msg: '경고판 뒤엔 벽뿐이다.' },
   ];
 
   function buildDungeon() {
@@ -151,8 +153,6 @@ const SC = (() => {
     sp('tablet', 4, tablet, 0, 0);
     const tabletRunes = div('tablet-runes', tablet);
 
-    sp('warn', 3, root, 236, 262);
-    sp('skullSign', 3, root, 694, 306);
 
     // lava moat + broken bridge + spikes
     const glow = div('lava-glow', root, 'left:0;top:430px;width:960px;height:76px');

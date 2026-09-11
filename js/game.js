@@ -9,7 +9,7 @@
   const S = {
     phase: 'intro', mission1: false, mission2: false, mission3: false,
     escapeUnlocked: false, gameCompleted: false, soundEnabled: true,
-    current: 0, hearts: 3, t0: 0, tEnd: 0,
+    current: 0, hearts: 3, mistakes: 0, t0: 0, tEnd: 0,
   };
   window.TRAP = S; // handy for debugging in the console
 
@@ -17,10 +17,15 @@
   const CANCEL = Symbol('cancel');
   const sleep = ms => { const r = RUN; return new Promise((res, rej) => setTimeout(() => (r === RUN ? res() : rej(CANCEL)), ms)); };
   const guard = fn => async (...a) => { try { await fn(...a); } catch (e) { if (e !== CANCEL) console.error(e); } };
-  const clickOnce = el => new Promise(res => { el.addEventListener('click', res, { once: true }); });
   const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const pick = a => a[Math.floor(Math.random() * a.length)];
   const fmt = ms => { const s = Math.floor(ms / 1000); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
   const faces = (f, mode) => D.party.forEach(c => { c.setFace(f); if (mode !== undefined) c.mode(mode); });
+  const stagePos = el => {
+    const r = el.getBoundingClientRect(), st = $('stage').getBoundingClientRect(), k = st.width / 960;
+    return { x: (r.left + r.width / 2 - st.left) / k, y: (r.top + r.height / 2 - st.top) / k };
+  };
+  const shakeEl = el => { el.classList.remove('shake-sm'); void el.offsetWidth; el.classList.add('shake-sm'); };
 
   /* ---------- stage fit ---------- */
   function fit() {
@@ -42,7 +47,7 @@
 
   /* ---------- UI pieces ---------- */
   async function banner(html, ms = 1100, top, cls = 'band') {
-    const b = div(`center ghost pop-c ${cls}`, ui,`z-index:25${top ? `;top:${top}px` : ''}`, html);
+    const b = div(`center ghost pop-c ${cls}`, ui, `z-index:25${top ? `;top:${top}px` : ''}`, html);
     try { await sleep(ms); } finally { b.classList.remove('pop-c'); b.classList.add('out-c'); setTimeout(() => b.remove(), 260); }
   }
 
@@ -90,10 +95,11 @@
       m.classList.toggle('now', !S['mission' + k] && k === S.current);
     });
   }
+  // no game over: hearts only cost stars at the end
   function loseHeart(x = 130, y = 60) {
-    SND.heart();
-    if (S.hearts > 1) { S.hearts--; renderHearts(); SC.floatText(x, y, `<span style="color:#FF5663">-1 ♥</span>`); }
-    else SC.floatText(x, y, '근성으로 버틴다!');
+    SND.heart(); S.mistakes++;
+    if (S.hearts > 0) { S.hearts--; renderHearts(); SC.floatText(x, y, `<span style="color:#FF5663">-1 ♥</span>`); }
+    else SC.floatText(x, y, '하트 0… 근성으로 버틴다!');
   }
 
   function questSign(tag, title, desc, count) {
@@ -114,7 +120,7 @@
     const l = D.label;
     if (S.escapeUnlocked) {
       l.classList.add('ready');
-      l.innerHTML = `<div class="l1">${icon('warn', 1, 'margin:-6px 6px 0 0')}READY</div><div class="l2">PUSH TO ESCAPE</div>`;
+      l.innerHTML = `<div class="l1">${icon('warn', 1, 'margin:-6px 6px 0 0')}MASH!</div><div class="l2">PUSH TO ESCAPE</div><div class="gauge"><i></i></div>`;
     } else {
       l.innerHTML = `<div class="l1">${icon('lock', 1, 'margin:-4px 8px 0 0')}LOCKED</div><div class="l2">MISSIONS ${doneCount()} / 3</div>`;
     }
@@ -149,7 +155,7 @@
   const startGame = guard(async () => {
     RUN++;
     SND.init(); SND.setEnabled(S.soundEnabled); SND.start();
-    Object.assign(S, { phase: 'intro', mission1: false, mission2: false, mission3: false, escapeUnlocked: false, gameCompleted: false, current: 0, hearts: 3 });
+    Object.assign(S, { phase: 'intro', mission1: false, mission2: false, mission3: false, escapeUnlocked: false, gameCompleted: false, current: 0, hearts: 3, mistakes: 0 });
     clearInterval(timerId); clearInterval(confettiId);
     ui.innerHTML = ''; $('vignette').className = ''; $('fx').innerHTML = '';
     const M = SC.buildMeadow(); show('meadow');
@@ -229,170 +235,279 @@
     faces('focus', null);
   }
 
-  /* ---------- MISSION 01 — FIND THE KEY ---------- */
+  /* ---------- MISSION 01 — FIND THE KEY (3 pieces, 2 bat traps) ---------- */
+  function batAttack(p) {
+    const b = sp('bat', 4, $('fx'), p.cx - 30, p.cy - 16);
+    b.animate([
+      { transform: 'translate(0,0) scale(.3)' }, { transform: 'translate(-50px,-70px) scale(1.3)' },
+      { transform: 'translate(60px,-140px) scale(1.1) scaleY(.6)' }, { transform: 'translate(-40px,-220px) scale(1)' },
+      { transform: 'translate(120px,-360px) scale(.8)', opacity: 0 },
+    ], { duration: 1100, easing: 'steps(12)', fill: 'forwards' }).onfinish = () => b.remove();
+  }
+
   async function mission1() {
     S.phase = 'mission'; S.current = 1; updateHUD();
-    questSign('MISSION 01', 'FIND THE KEY', '숨겨진 열쇠를 찾으세요.', `${icon('key', 2)}&nbsp; 0 / 1`);
+    const NEED = 3;
+    const count = n => `${icon('key', 2)}&nbsp; ${n} / ${NEED}`;
+    questSign('MISSION 01', 'FIND THE KEY', `열쇠 조각 ${NEED}개를 찾아라!`, count(0));
     faces('focus');
     D.party[0].say('어디 있지?', 1600, true);
+    setTimeout(() => D.party[1] && D.party[1].say('박쥐 조심해!', 1500, true), 900);
     const props = D.props;
-    const keyAt = 1 + Math.floor(Math.random() * 3); // key shows up on the 2nd–4th search
-    let misses = 0;
-    props.forEach(p => p.el.classList.add('live'));
+    const kind = {};
+    shuffle(props.map((_, i) => i)).forEach((pi, k) => { kind[pi] = k < NEED ? 'piece' : k < NEED + 2 ? 'bat' : 'empty'; });
+    let got = 0, stunned = false;
     const run = RUN;
-    const found = await new Promise(res => {
-      props.forEach(p => {
-        p.el.onclick = () => {
-          if (run !== RUN || !p.el.classList.contains('live')) return;
-          p.el.classList.remove('live');
-          p.img.classList.remove('wiggle'); void p.img.offsetWidth; p.img.classList.add('wiggle');
-          const left = props.filter(q => q.el.classList.contains('live')).length;
-          if (misses >= keyAt || left === 0) return res(p);
-          misses++;
-          p.el.classList.add('searched'); div('x', p.el, '', 'X');
-          SND.bonk();
+    props.forEach(p => p.el.classList.add('live'));
+    await new Promise(res => props.forEach((p, i) => {
+      p.el.onclick = () => {
+        if (run !== RUN || stunned || !p.el.classList.contains('live')) return;
+        p.el.classList.remove('live'); p.el.classList.add('searched');
+        p.img.classList.remove('wiggle'); void p.img.offsetWidth; p.img.classList.add('wiggle');
+        if (kind[i] === 'piece') {
+          got++;
+          SND.key(); SC.sparkles(p.cx, p.cy - 20, 6, 40);
+          SC.particles(p.cx, p.cy, 10, ['#FFD95F', '#FFF2B5', '#FFC94D'], { up: true, dist: 60 });
+          const k = sp('key', 3, $('fx'), p.cx - 24, p.cy - 12);
+          k.animate([{ transform: 'translateY(0) scale(.3)' }, { transform: 'translateY(-50px) scale(1.2)' }, { transform: `translate(${480 - p.cx}px, ${140 - p.cy}px) scale(.6)`, opacity: 0.3 }],
+            { duration: 900, easing: 'steps(9)', fill: 'forwards' }).onfinish = () => k.remove();
+          SC.floatText(p.cx, p.y - 34, `<span style="color:#FFD95F">열쇠 조각 발견!</span> ${got}/${NEED}`);
+          const q = $('qCount'); if (q) q.innerHTML = count(got);
+          if (got === NEED) res();
+        } else if (kind[i] === 'bat') {
+          stunned = true;
+          SND.zap(); SND.wrong(); SC.flash(true); SC.shake(400, true); loseHeart();
+          div('x', p.el, '', 'X'); batAttack(p);
+          SC.floatText(p.cx, p.y - 34, '<span style="color:#FF5663">박쥐 습격!</span> 잠시 기절…');
+          faces('dizzy', 'recoil');
+          setTimeout(() => { if (run === RUN) { stunned = false; if (!S.mission1) faces('focus', null); } }, 1400);
+        } else {
+          div('x', p.el, '', 'X'); SND.bonk();
           SC.floatText(p.cx, p.y - 34, `<span style="color:#FF5663">✕</span> ${p.msg}`);
-          const c = D.party[misses % D.party.length]; c.setFace('dizzy'); c.mode('recoil'); setTimeout(() => { if (run === RUN && !S.mission1) c.setFace('focus'); }, 700);
-        };
-      });
-    });
+          const c = D.party[i % D.party.length]; c.setFace('dizzy'); c.mode('recoil');
+          setTimeout(() => { if (run === RUN && !S.mission1) c.setFace('focus'); }, 700);
+        }
+      };
+    }));
     props.forEach(q => { q.el.classList.remove('live'); q.el.onclick = null; });
-    // key pops out of the prop
-    SND.key(); SC.sparkles(found.cx, found.cy - 20, 8, 50);
-    SC.particles(found.cx, found.cy, 14, ['#FFD95F', '#FFF2B5', '#FFC94D'], { up: true, dist: 80 });
-    const key = sp('key', 4, $('fx'), found.cx - 34, found.cy - 20);
-    key.animate([{ transform: 'translateY(0) scale(.2)' }, { transform: 'translateY(-70px) scale(1.2)' }, { transform: 'translateY(-60px) scale(1)' }], { duration: 500, easing: 'steps(6)', fill: 'forwards' });
-    SC.floatText(found.cx, found.cy - 120, '<span class="ttl sm gold" style="font-size:16px">KEY FOUND!</span>', '');
-    const q = $('qCount'); if (q) q.innerHTML = `${icon('key', 2)}&nbsp; 1 / 1`;
-    await sleep(900);
-    key.animate([{ transform: 'translateY(-60px) scale(1)' }, { transform: `translate(${60 - found.cx}px, ${230 - found.cy}px) scale(.4)`, opacity: 0.2 }], { duration: 500, easing: 'steps(6)', fill: 'forwards' });
+    await sleep(700);
+    // the three pieces fuse into one key
+    SND.key(); SC.flash();
+    const key = sp('key', 6, $('fx'), 480 - 51, 200);
+    key.animate([{ transform: 'scale(0) rotate(-30deg)' }, { transform: 'scale(1.3) rotate(10deg)' }, { transform: 'scale(1)' }], { duration: 500, easing: 'steps(6)', fill: 'forwards' });
+    SC.sparkles(480, 220, 12, 120);
+    SC.floatText(480, 170, '<span class="ttl sm gold" style="font-size:16px">KEY ASSEMBLED!</span>', '');
+    await sleep(1000);
+    key.animate([{ transform: 'scale(1)' }, { transform: 'translate(-400px, 20px) scale(.3)', opacity: 0.2 }], { duration: 500, easing: 'steps(6)', fill: 'forwards' });
     await sleep(520); key.remove();
     await missionComplete(1);
   }
 
-  /* ---------- MISSION 02 — CUT THE WIRES ---------- */
+  /* ---------- MISSION 02 — CUT THE WIRES (defusal manual, real timer) ---------- */
+  const WIRES = {
+    red: { c: '#FF3B47', hi: '#FF8A8A', lo: '#C8172F' },
+    blue: { c: '#398FE3', hi: '#8AD7FF', lo: '#1D4E9E' },
+    yellow: { c: '#FFD23E', hi: '#FFF2B5', lo: '#E09A2E' },
+    green: { c: '#55B957', hi: '#A2E66E', lo: '#348C46' },
+  };
+  const LEDS = { red: '#FF3B47', blue: '#54B8F7', green: '#7BD95A' };
+  const MANUAL = `<h4>DEFUSAL MANUAL</h4><div class="sub">위에서부터! 먼저 맞는 규칙 하나만 따른다.</div>
+    1. LED <b>빨강</b> → 파란 선<br>
+    2. 시리얼 끝자리 <b>짝수</b> → 노란 선<br>
+    3. 맨 위 선이 <b>초록</b> → 초록 선<br>
+    4. 그 외 전부 → 빨간 선`;
+  function bombConfig() {
+    const order = shuffle(Object.keys(WIRES));
+    const led = pick(Object.keys(LEDS));
+    const digit = Math.floor(Math.random() * 10);
+    const serial = `TR${pick([...'ABCDEFGHJKLMNPRSTUVWXYZ'])}-${10 + Math.floor(Math.random() * 90)}${digit}`;
+    const ans = led === 'red' ? 'blue' : digit % 2 === 0 ? 'yellow' : order[0] === 'green' ? 'green' : 'red';
+    return { order, led, serial, ans };
+  }
+
   async function mission2() {
     S.current = 2; updateHUD();
-    questSign('MISSION 02', 'CUT THE WIRES', '폭탄을 해체하세요! 올바른 선을 끊어라.');
+    questSign('MISSION 02', 'CUT THE WIRES', '매뉴얼대로 올바른 선을 끊어라!');
     faces('panic'); D.party[1].say('폭탄이다!!', 1400, true);
     await sleep(600);
-    const W = [
-      { name: '빨간', c: '#FF3B47', hi: '#FF8A8A', lo: '#C8172F' },
-      { name: '파란', c: '#398FE3', hi: '#8AD7FF', lo: '#1D4E9E' },
-      { name: '노란', c: '#FFD23E', hi: '#FFF2B5', lo: '#E09A2E' },
-    ];
-    const ans = Math.floor(Math.random() * 3);
-    const banned = [0, 1, 2].filter(i => i !== ans)[Math.floor(Math.random() * 2)];
-    const win = div('frame window win-in', ui, 'left:170px;top:128px;width:620px;height:340px;z-index:15', '<div class="wtitle">!! TRAP DEVICE !!</div>');
-    sp('bomb', 4, win, 28, 58);
-    const lcd = div('lcd abs', win, 'left:26px;top:196px', '00:10');
-    const wires = W.map((w, i) => div('wire', win, `left:236px;top:${64 + i * 58}px;--c:${w.c};--hi:${w.hi};--lo:${w.lo}`, '<i class="term t1"></i><i class="seg a"></i><i class="seg b"></i><i class="term t2"></i>'));
-    div('note ko', win, 'left:374px;top:246px;width:220px', `메모: <span style="color:${W[banned].lo}">${W[banned].name} 선</span>은<br>절대 자르지 마!`);
-    const status = div('abs ko', win, 'left:20px;top:270px;width:340px;font-size:16px;line-height:1.4');
-    status.textContent = '어떤 선을 끊어야 하지?';
+    const LIMIT = 20;
+    const win = div('frame window win-in', ui, 'left:110px;top:132px;width:740px;height:380px;z-index:15', '<div class="wtitle">!! TRAP DEVICE !!</div>');
+    sp('bomb', 3, win, 20, 52);
+    const led = div('led', win, 'left:122px;top:64px');
+    div('abs', win, 'left:118px;top:100px;font-family:var(--px);font-size:8px;color:var(--bl4)', 'LED');
+    const serial = div('serial', win, 'left:18px;top:150px');
+    const lcd = div('lcd abs', win, 'left:18px;top:222px');
+    const wireBox = div('abs', win, 'left:0;top:0');
+    div('manual ko', win, 'left:452px;top:52px;width:262px', MANUAL);
+    const status = div('abs ko', win, 'left:18px;top:306px;width:450px;font-size:15px;line-height:1.4', '매뉴얼을 읽고 딱 하나의 선을 끊어라.');
     setTimeout(() => win.classList.remove('win-in'), 400);
 
-    let left = 10, done = false;
     const run = RUN;
+    let cfg, left, done = false, resolve;
+    const solved = new Promise(r => { resolve = r; });
+    const showTime = () => { lcd.textContent = `00:${String(Math.max(0, left)).padStart(2, '0')}`; lcd.classList.toggle('blink-fast', left <= 5); };
+    const arm = () => {
+      cfg = bombConfig(); left = LIMIT;
+      led.style.background = LEDS[cfg.led];
+      serial.innerHTML = `<small>SERIAL NO.</small>${cfg.serial}`;
+      lcd.className = 'lcd abs'; showTime();
+      wireBox.innerHTML = '';
+      cfg.order.forEach((k, i) => {
+        const w = WIRES[k];
+        const el = div('wire', wireBox, `left:222px;width:190px;top:${56 + i * 54}px;--c:${w.c};--hi:${w.hi};--lo:${w.lo}`,
+          '<i class="term t1"></i><i class="seg a"></i><i class="seg b"></i><i class="term t2"></i>');
+        el.dataset.color = k;
+        el.onclick = () => cut(el, k);
+      });
+    };
+    const cut = (el, k) => {
+      if (run !== RUN || done || el.classList.contains('cut')) return;
+      el.classList.add('cut'); SND.cut();
+      const p = stagePos(el);
+      SC.particles(p.x, p.y, 12, ['#FFE894', '#FF8A3C', '#FFFFFF'], { dist: 50, gravity: 10 });
+      if (k === cfg.ans) {
+        done = true; clearInterval(tick); SND.disarm();
+        lcd.className = 'lcd abs ok'; lcd.textContent = 'SAFE';
+        status.innerHTML = '<span class="ttl sm" style="--ex:#348C46;color:#A2E66E;font-size:14px">SYSTEM DISABLED</span>';
+        resolve();
+      } else {
+        SND.wrong(); SND.zap(); SC.flash(true); loseHeart(); shakeEl(win);
+        left = Math.max(1, left - 5); showTime();
+        status.innerHTML = '<span style="color:#FF5663">⚠ WRONG WIRE! -5초</span> 매뉴얼을 다시 봐!';
+        faces('dizzy'); setTimeout(() => { if (run === RUN && !done) faces('panic'); }, 700);
+      }
+    };
+    const boom = () => {
+      SND.explosion(); SC.flash(true); SC.shake(700); loseHeart();
+      const p = stagePos(win);
+      SC.particles(p.x - 250, p.y - 80, 30, ['#FF8A3C', '#FFD95F', '#FF3B47', '#FFF2D2'], { dist: 140 });
+      status.innerHTML = '<span style="color:#FF5663">BOOM!</span> 폭탄이 재설정됐다… 처음부터 다시!';
+      faces('dizzy'); setTimeout(() => { if (run === RUN && !done) faces('panic'); }, 900);
+      arm();
+    };
+    arm();
     const tick = setInterval(() => {
       if (run !== RUN || done) return clearInterval(tick);
-      if (left > 0) { left--; lcd.textContent = `00:${String(left).padStart(2, '0')}`; SND.beep(left <= 3); }
-      else if (!lcd.classList.contains('blink-fast')) { lcd.classList.add('blink-fast'); status.textContent = '…불발탄이었다?! 침착하게 계속 해체하자.'; }
+      left--; showTime(); SND.beep(left <= 5);
+      if (left <= 0) boom();
     }, 1000);
-
-    await new Promise(res => wires.forEach((wEl, i) => {
-      wEl.onclick = () => {
-        if (run !== RUN || done || wEl.classList.contains('cut')) return;
-        wEl.classList.add('cut'); SND.cut();
-        const r = wEl.getBoundingClientRect(), st = $('stage').getBoundingClientRect(), k = st.width / 960;
-        const cx = (r.left + r.width / 2 - st.left) / k, cy = (r.top + r.height / 2 - st.top) / k;
-        SC.particles(cx, cy, 12, ['#FFE894', '#FF8A3C', '#FFFFFF'], { dist: 50, gravity: 10 });
-        if (i === ans) {
-          done = true; clearInterval(tick); SND.disarm();
-          lcd.classList.remove('blink-fast'); lcd.classList.add('ok'); lcd.textContent = 'SAFE';
-          status.innerHTML = '<span class="ttl sm" style="--ex:#348C46;color:#A2E66E;font-size:14px">SYSTEM DISABLED</span>';
-          res();
-        } else {
-          SND.wrong(); SND.zap(); SC.flash(true); loseHeart();
-          win.classList.remove('shake-sm'); void win.offsetWidth; win.classList.add('shake-sm');
-          status.innerHTML = '<span style="color:#FF5663">⚠ WRONG WIRE!</span> 다시 시도하세요.';
-          faces('dizzy'); setTimeout(() => { if (run === RUN && !done) faces('panic'); }, 700);
-        }
-      };
-    }));
+    await solved;
     await sleep(1000);
     win.classList.add('win-out'); await sleep(320); win.remove();
     await missionComplete(2);
   }
 
-  /* ---------- MISSION 03 — OPEN THE LOCK ---------- */
+  /* ---------- MISSION 03 — OPEN THE LOCK (memorize 6 flashing runes) ---------- */
   async function mission3() {
     S.current = 3; updateHUD();
-    questSign('MISSION 03', 'OPEN THE LOCK', '벽 석판의 순서대로 룬을 누르세요.');
-    const KINDS = ['star', 'diamond', 'circle', 'tri'];
-    const seq = shuffle(KINDS);
-    D.tabletRunes.innerHTML = seq.map((k, i) => `<img src="${SPR['runeGold_' + k].url}" alt="">${i < 3 ? '<span class="ar">▶</span>' : ''}`).join('');
+    const KINDS = ['star', 'diamond', 'circle', 'tri'], LEN = 6;
+    questSign('MISSION 03', 'OPEN THE LOCK', `석판의 룬 ${LEN}개를 기억하라!`);
+    const seq = [];
+    while (seq.length < LEN) {
+      const k = pick(KINDS);
+      if (seq.length >= 2 && seq[seq.length - 1] === k && seq[seq.length - 2] === k) continue;
+      seq.push(k);
+    }
+    const TR = D.tabletRunes;
     D.tablet.classList.add('glow'); D.tabletGlow.style.opacity = 1; D.tabletGlow.classList.add('flicker');
-    SND.sparkle(); SC.sparkles(118, 240, 6, 70);
-    const hint = div('abs ghost ttl sm gold blink', ui, 'left:40px;top:352px;font-size:12px;z-index:14', '▲ HINT');
-    faces('focus'); D.party[2].say('벽에 뭔가 있어!', 1600, true);
-    await sleep(500);
+    const hint = div('abs ghost ttl sm gold blink', ui, 'left:40px;top:352px;font-size:12px;z-index:14', '▲ WATCH!');
+    faces('focus'); D.party[2].say('벽을 봐!', 1400, true);
 
-    const win = div('frame window blue win-in', ui, 'left:446px;top:150px;width:470px;height:300px;z-index:15', '<div class="wtitle">RUNE LOCK</div>');
+    const win = div('frame window blue win-in', ui, 'left:446px;top:150px;width:480px;height:300px;z-index:15', '<div class="wtitle">RUNE LOCK</div>');
     const slots = div('slots', win);
     const slotEls = seq.map(() => div('slot', slots));
-    const row = div('runes', win);
-    const status = div('status', win, 'color:#8AD7FF', 'ENTER THE CODE');
+    const row = div('runes busy', win);
+    const status = div('status', win);
     setTimeout(() => win.classList.remove('win-in'), 400);
-    let input = [], done = false;
+    let input = [], done = false, busy = true, resolve;
     const run = RUN;
+    const solved = new Promise(r => { resolve = r; });
+    const setStatus = (t, c) => { status.style.color = c; status.textContent = t; };
     const reset = () => { input = []; slotEls.forEach(s => { s.innerHTML = ''; }); };
+    const idle = () => { TR.className = 'tablet-runes big'; TR.innerHTML = '<span class="qm">? ? ? ? ? ?</span>'; };
+    const showSeq = async () => {
+      busy = true; row.classList.add('busy'); setStatus('WATCH THE WALL!', '#FFD95F');
+      hint.textContent = '▲ WATCH!';
+      TR.className = 'tablet-runes big';
+      for (let i = 0; i < LEN; i++) {
+        TR.innerHTML = `<img src="${SPR['runeGold_' + seq[i]].url}" alt=""><span class="step">${i + 1}/${LEN}</span>`;
+        SND.rune(KINDS.indexOf(seq[i]));
+        await sleep(700);
+        TR.innerHTML = '';
+        await sleep(170);
+      }
+      idle(); hint.textContent = '▲ ???';
+      busy = false; row.classList.remove('busy'); setStatus('ENTER THE CODE', '#8AD7FF');
+    };
 
-    await new Promise(res => KINDS.forEach((k, idx) => {
+    KINDS.forEach((k, idx) => {
       const b = document.createElement('button'); b.className = 'rune-btn'; row.appendChild(b);
       sp('rune_' + k, 4, b, 16, 14);
       b.onclick = () => {
-        if (run !== RUN || done) return;
+        if (run !== RUN || done || busy) return;
         SND.rune(idx);
         b.classList.add('hit-on'); setTimeout(() => b.classList.remove('hit-on'), 120);
         if (k === seq[input.length]) {
           sp('rune_' + k, 4, slotEls[input.length], 11, 11, 'pop');
           input.push(k);
-          if (input.length === 4) {
+          if (input.length === LEN) {
             done = true; SND.granted();
-            status.style.color = '#7BD95A'; status.textContent = 'ACCESS GRANTED';
+            setStatus('ACCESS GRANTED', '#7BD95A');
             slotEls.forEach(s => { s.style.boxShadow = 'inset 0 0 0 3px #7BD95A'; });
-            res();
+            resolve();
           }
         } else {
-          SND.denied(); loseHeart(); SC.flash(true);
-          status.style.color = '#FF5663'; status.textContent = 'ACCESS DENIED';
-          win.classList.remove('shake-sm'); void win.offsetWidth; win.classList.add('shake-sm');
-          faces('dizzy'); setTimeout(() => { if (run === RUN && !done) { faces('focus'); status.style.color = '#8AD7FF'; status.textContent = 'ENTER THE CODE'; } }, 900);
-          reset();
+          SND.denied(); loseHeart(); SC.flash(true); shakeEl(win);
+          setStatus('ACCESS DENIED', '#FF5663');
+          busy = true; row.classList.add('busy'); reset();
+          faces('dizzy');
+          setTimeout(() => { if (run === RUN && !done) { faces('focus'); showSeq().catch(() => {}); } }, 1000);
         }
       };
-    }));
+    });
+
+    await sleep(700);
+    await showSeq();
+    await solved;
     await sleep(1000);
     win.classList.add('win-out'); hint.remove();
-    D.tablet.classList.remove('glow'); D.tabletGlow.style.opacity = 0;
+    D.tablet.classList.remove('glow'); D.tabletGlow.style.opacity = 0; TR.innerHTML = '';
     await sleep(320); win.remove();
     await missionComplete(3);
   }
 
-  /* ---------- ESCAPE ---------- */
+  /* ---------- ESCAPE (mash to fill the power gauge) ---------- */
+  function mash() {
+    return new Promise(res => {
+      const run = RUN, bar = D.label.querySelector('.gauge i'), g = D.label.querySelector('.gauge');
+      let power = 0, last = performance.now(), done = false;
+      const draw = () => { bar.style.width = `${power * 1.46}px`; g.classList.toggle('hot', power > 70); };
+      const decay = setInterval(() => {
+        if (run !== RUN || done) return clearInterval(decay);
+        const now = performance.now(); power = Math.max(0, power - 22 * (now - last) / 1000); last = now; draw();
+      }, 50);
+      D.hitbox.onclick = () => {
+        if (run !== RUN || done) return;
+        power = Math.min(100, power + 9); draw(); SND.pump(power);
+        D.btn.classList.add('pressed'); setTimeout(() => D.btn.classList.remove('pressed'), 70);
+        SC.particles(480, 390, 3, ['#FFE35B', '#FF8A3C'], { up: true, dist: 40 });
+        if (power >= 100) { done = true; clearInterval(decay); D.hitbox.onclick = null; res(); }
+      };
+    });
+  }
+
   async function escapeReady() {
     S.escapeUnlocked = true; S.phase = 'escape'; S.current = 4; updateHUD();
-    // chains shatter, padlock drops
     SND.unlock(); SC.flash(); SC.shake(300, true);
     SC.particles(480, 390, 24, ['#AEB9E0', '#7885B5', '#E2E8FF', '#FFC94D'], { dist: 110 });
     D.locks.animate([{ transform: 'translateY(0)', opacity: 1 }, { transform: 'translateY(60px) rotate(20deg)', opacity: 0 }], { duration: 500, easing: 'steps(5)', fill: 'forwards' });
     D.btn.classList.add('ready'); escLabel();
-    questSign('FINAL', 'PUSH TO ESCAPE!', '빨간 버튼을 눌러 탈출하세요!');
+    questSign('FINAL', 'MASH TO ESCAPE!', '버튼을 연타해서 게이지를 채워라!');
     faces('happy'); D.party[0].say('지금이야!', 1500, true);
     await banner(`${icon('lock', 4)}<div class="ttl gold" style="font-size:30px;margin-top:18px">ESCAPE BUTTON</div><div class="ttl md blue" style="font-size:24px;margin-top:22px">UNLOCKED</div>`, 1400, 200);
     faces('focus');
-    await clickOnce(D.hitbox);
+    D.party[1].say('연타! 연타!', 1600, true);
+    await mash();
     await escapeSequence();
   }
 
@@ -437,7 +552,7 @@
       c.el.style.transition = 'left 1s steps(10), top 1s steps(10), transform 1s steps(10), opacity 1s steps(10)';
       c.el.style.zIndex = 1; c.moveTo(444, 262); c.el.style.transform = 'scale(.5)'; c.el.style.opacity = 0;
     }, 300 + i * 300));
-    await sleep(2500);
+    await sleep(2300);
     clearInterval(shine);
     const white = div('abs ghost', ui, 'left:0;top:0;width:960px;height:540px;background:#FFF9E8;opacity:0;transition:opacity .4s steps(4);z-index:40');
     void white.offsetWidth; white.style.opacity = 1;
@@ -450,6 +565,8 @@
     S.phase = 'clear'; S.gameCompleted = true; S.tEnd = Date.now();
     clearInterval(timerId);
     const secs = Math.floor((S.tEnd - S.t0) / 1000);
+    const stars = Math.max(1, Math.min(5, 2 + S.hearts - (secs > 150 ? 1 : 0)));
+    const rank = stars === 5 && secs < 100 ? ['LEGEND', '전설의 탈출러'] : stars >= 4 ? ['HERO', '함정 파괴자'] : stars >= 3 ? ['ADVENTURER', '침착한 모험가'] : ['SURVIVOR', '끈질긴 생존자'];
     ui.innerHTML = ''; $('fx').innerHTML = '';
     const V = SC.buildVictory(); show('victory');
     V.party.forEach((c, i) => { c.el.style.animationDelay = `${i * 0.12}s`; c.mode('jump'); });
@@ -468,17 +585,16 @@
     const tt = div('center', L, 'top:132px', '<div class="ttl gold" style="font-size:50px">MISSION CLEAR!</div>');
     tt.classList.add('pop-c');
     div('center ttl md blue', L, 'top:190px;font-size:20px', 'TRAP ESCAPED');
-    const stars = div('center stars', L, 'top:244px');
-    const starImgs = [0, 1, 2, 3, 4].map(() => sp('starEmpty', 4, stars));
+    const starRow = div('center stars', L, 'top:244px');
+    const starImgs = [0, 1, 2, 3, 4].map(() => sp('starEmpty', 4, starRow));
 
-    const rank = secs < 60 ? ['LEGEND', '전설의 탈출러'] : secs < 100 ? ['HERO', '함정 파괴자'] : secs < 150 ? ['ADVENTURER', '침착한 모험가'] : ['SURVIVOR', '끈질긴 생존자'];
     div('frame cream checklist', L, 'left:34px;top:300px;width:262px', `
       ${['FIND THE KEY', 'CUT THE WIRES', 'OPEN THE LOCK'].map(n => `<div class="ci">${icon('check', 2)}${n}</div>`).join('')}
       <div class="tot">3 / 3 COMPLETE</div>`);
     div('frame dark', L, 'left:664px;top:300px;width:262px;padding:14px 20px 14px', `
       <div style="font-family:var(--px);font-size:10px;color:var(--bl4)">CLEAR TIME</div>
-      <div class="ttl sm" style="font-size:24px;margin:10px 0 14px">${fmt(S.tEnd - S.t0)}</div>
-      <div style="font-family:var(--px);font-size:10px;color:var(--bl4)">RANK</div>
+      <div class="ttl sm" style="font-size:24px;margin:10px 0 12px">${fmt(S.tEnd - S.t0)}</div>
+      <div style="font-family:var(--px);font-size:10px;color:var(--bl4)">RANK <span style="color:var(--rd3);margin-left:10px">MISS ${S.mistakes}</span></div>
       <div class="rank" style="margin-top:8px">${rank[0]}</div>
       <div class="ko" style="font-size:14px;margin-top:6px;color:var(--cr)">${rank[1]}</div>`);
 
@@ -491,10 +607,10 @@
     go.onclick = () => { go.classList.add('down'); SND.click(); };
 
     await sleep(900);
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < stars; i++) {
       starImgs[i].src = SPR.star.url; starImgs[i].classList.add('pop'); SND.star(i);
-      const r = starImgs[i].getBoundingClientRect(), st = $('stage').getBoundingClientRect(), k = st.width / 960;
-      SC.sparkles((r.left - st.left) / k + 22, (r.top - st.top) / k + 20, 3, 20);
+      const p = stagePos(starImgs[i]);
+      SC.sparkles(p.x, p.y, 3, 20);
       await sleep(180);
     }
   }

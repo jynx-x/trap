@@ -70,6 +70,7 @@ const SND = (() => {
       noise({ dur: 0.07, vol: 0.35, freq: 1600 }); noise({ t: 0.14, dur: 0.07, vol: 0.35, freq: 1600 });
       arp([72, 79, 84, 88, 91, 96], 0.07, { t: 0.3, type: 'square', vol: 0.15, dur: 0.2 });
     },
+    pump(p) { tone({ f: 260 + p * 9, f2: 420 + p * 9, dur: 0.06, vol: 0.13 }); },
     press() { tone({ f: 200, f2: 70, dur: 0.18, vol: 0.4 }); noise({ dur: 0.06, vol: 0.3, freq: 2000 }); },
     explosion() { noise({ dur: 1.6, vol: 0.9, freq: 3500, freq2: 60 }); tone({ f: 110, f2: 28, dur: 0.9, vol: 0.55, type: 'sine' }); },
     door() {

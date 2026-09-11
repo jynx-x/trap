@@ -94,6 +94,15 @@
     '....b....',
   ], { b: 'bl1', h: 'bl4', y: 'go2' }));
 
+  reg('bat', fromMap([
+    'x...........x',
+    'xx..x...x..xx',
+    'xxx.xxxxx.xxx',
+    '.xxxxrxrxxxx.',
+    '..xxxxxxxxx..',
+    '.....x.x.....',
+  ], { x: 'pu0', r: 'rd3' }));
+
   reg('check', fromMap([
     '........g', '.......gg', '......gg.', 'g....gg..', 'gg..gg...', '.gggg....', '..gg.....',
   ], { g: 'gr2' }));
