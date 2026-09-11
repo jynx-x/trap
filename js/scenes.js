@@ -2,6 +2,8 @@
 const SC = (() => {
   const $ = id => document.getElementById(id);
   const S = PX.SPR;
+  let seed = 11;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 
   function div(cls, parent, css, html) {
     const d = document.createElement('div');
@@ -50,64 +52,100 @@ const SC = (() => {
   }
   const party = (parent, xs, y, face) => PX.TEAM.map((m, i) => makeChar(m, parent, xs[i], y, face));
 
+  /* ---------- shared scenery helpers ---------- */
   function island(root, name, s, x, y, delay) {
     const g = div('abs bobble', root, `left:${x}px;top:${y}px;animation-delay:${delay}s`);
     return { g, img: sp(name, s, g, 0, 0) };
   }
-  function clouds(root, list, dur, top = 0) {
-    const cl = div('abs drift', root, `left:0;top:${top}px;width:2600px;height:10px;animation-duration:${dur}s`);
+  function clouds(root, list, dur, top = 0, css = '') {
+    const cl = div('abs drift', root, `left:0;top:${top}px;width:2600px;height:10px;animation-duration:${dur}s;${css}`);
     list.forEach(([x, y, n, s]) => { sp(n, s, cl, x, y); sp(n, s, cl, x + 1300, y); });
     return cl;
   }
-  function ground(root, top) {
-    tile(root, 'grassTop', 3, 0, top, 960, 30);
-    tile(root, 'dirt', 3, 0, top + 30, 960, 540 - top - 30);
+  function starsField(root, n, maxY) {
+    seed = 11;
+    for (let i = 0; i < n; i++) {
+      const size = rnd() > 0.82 ? 4 : rnd() > 0.45 ? 3 : 2;
+      div('abs twk', root, `left:${Math.round(rnd() * 960)}px;top:${Math.round(rnd() * maxY)}px;width:${size}px;height:${size}px;background:${['#FFF9E8', '#8AD7FF', '#FFE894'][i % 3]};animation-delay:-${(rnd() * 1.6).toFixed(2)}s`);
+    }
   }
+  function ocean(root, top, h) {
+    const o = div('ocean', root, `top:${top}px;height:${h}px`);
+    [5, 18, 36, 62, 96, 140].forEach((y, i) => div('wv', o, `top:${y}px;animation-duration:${3 + i}s;opacity:${1 - i * 0.13}`));
+    return o;
+  }
+  function blimp(root, top, dur) {
+    const ship = div('abs drift', root, `left:1000px;top:${top}px;animation-duration:${dur}s`);
+    const g = div('bobble', ship, 'position:relative');
+    sp('blimp', 3, g, 0, 0);
+    div('blimp-text', g, '', 'VISUAL SYSTEMS<br>SQUAD');
+    return ship;
+  }
+  const signboard = (root, x, y, html) => div('signboard', root, `left:${x}px;top:${y}px`, html);
+  function woodSign(root, x, y, html) {
+    const w = div('woodsign', root, `left:${x}px;top:${y}px`);
+    div('board', w, '', html); div('pole', w);
+    return w;
+  }
+  function cliff(root, x, w, side) {
+    tile(root, 'cliff', 3, x, 428, w, 112);
+    div('abs', root, `left:${side === 'L' ? x + w - 18 : x}px;top:428px;width:18px;height:112px;background:rgba(7,22,47,.4)`);
+    tile(root, 'grassTop', 3, x, 406, w, 30);
+  }
+  const lamp = (root, x, y) => { sp('haloLamp', 3, root, x - 18, y - 30, 'flicker'); sp('lamp', 3, root, x, y); };
   function flowers(root, list) { list.forEach(([x, y, k]) => sp(`flower${k}`, 3, root, x, y)); }
 
-  /* ---------------- MEADOW (intro) ---------------- */
+  /* ---------------- INTRO: night world + rope bridge over the spike pit ---------------- */
   function buildMeadow() {
     const root = $('meadow'); root.innerHTML = '';
-    div('sky', root);
-    sp('haloSun', 3, root, 690, -40, 'flicker');
-    sp('sun', 3, root, 774, 44);
-    clouds(root, [[40, 40, 'cloudL', 3], [420, 120, 'cloudS', 3], [660, 20, 'cloudS', 2], [930, 96, 'cloudL', 2]], 140);
-    const big = island(root, 'islandL', 3, 520, 170, 0);
-    div('waterfall', big.g, 'left:150px;top:60px;height:300px;z-index:-1');
-    sp('castle', 2, big.g, 86, -82);
-    const m1 = island(root, 'islandM', 3, 40, 120, -1.2);
-    sp('tree', 2, m1.g, 30, -64); sp('flag', 2, m1.g, 104, -38);
-    island(root, 'islandS', 2, 360, 76, -0.6);
-    const s2 = island(root, 'islandS', 3, 862, 250, -2);
-    div('waterfall', s2.g, 'left:40px;top:50px;height:220px;width:16px;z-index:-1');
-    const ship = div('abs drift', root, 'left:1000px;top:46px;animation-duration:42s');
-    sp('airship', 2, div('bobble', ship), 0, 0);
-    clouds(root, [[120, 0, 'cloudL', 4], [700, 20, 'cloudL', 3], [1050, 10, 'cloudS', 4]], 90, 330);
-    // midground
-    sp('tree', 4, root, -10, 262); sp('tree', 4, root, 842, 262);
-    sp('bush', 3, root, 150, 368); sp('bush', 3, root, 740, 372);
-    [[250, 312], [678, 312]].forEach(([x, y]) => { sp('haloLamp', 3, root, x - 18, y - 30, 'flicker'); sp('lamp', 3, root, x, y); });
-    ground(root, 402);
-    flowers(root, [[40, 440, 0], [110, 470, 1], [200, 438, 2], [260, 490, 3], [700, 452, 0], [790, 488, 1], [880, 446, 2], [610, 500, 3], [360, 505, 1], [150, 505, 2]]);
-    const slime = div('abs bobble', root, 'left:792px;top:382px;animation-duration:.8s');
-    sp('slime', 3, slime, 0, 0);
-    // trap hole + cracks (hidden until the accident)
-    const cracks = div('abs', root, 'left:0;top:0;width:960px;height:540px;opacity:0;transition:opacity .2s steps(2)');
-    for (let k = 0; k < 7; k++) {
-      let x = 300 + k * 52, y = 412 + (k % 3) * 8;
-      for (let i = 0; i < 6; i++) { div('abs', cracks, `left:${x}px;top:${y}px;width:12px;height:4px;background:#07162F`); x += 10; y += (i % 2 ? -4 : 4); }
-    }
-    const hole = div('abs', root, 'left:280px;top:396px;width:420px;height:64px;transform:scaleX(0);transition:transform .35s steps(5)');
-    [['0;top:12px;width:420px;height:40px', '#07162F'], ['22px;top:4px;width:376px;height:56px', '#07162F'], ['56px;top:0;width:308px;height:64px', '#07162F'],
-      ['96px;top:16px;width:228px;height:32px', 'rgba(200,23,47,.55)'], ['140px;top:22px;width:140px;height:20px', 'rgba(255,138,60,.6)']]
-      .forEach(([pos, bg]) => div('abs', hole, `left:${pos};background:${bg}`));
-    return { root, cracks, hole, party: party(root, [364, 444, 524], 338, 'normal') };
+    div('sky night', root);
+    starsField(root, 52, 300);
+    [[210, 70], [520, 36], [872, 150], [60, 232], [680, 110]].forEach(([x, y], i) => { sp('sparkle', 3, root, x, y, 'twk').style.animationDelay = `${i * 0.35}s`; });
+    sp('haloMoon', 3, root, 211, -21, 'flicker'); sp('moon', 3, root, 262, 30);
+    ocean(root, 318, 222);
+    const big = island(root, 'islandL', 3, 20, 158, 0);
+    div('waterfall', big.g, 'left:112px;top:66px;height:200px;z-index:-1'); div('waterfall', big.g, 'left:190px;top:56px;height:210px;width:16px;z-index:-1');
+    sp('castle', 2, big.g, 74, -96); sp('pine', 2, big.g, 14, -56); sp('pine', 2, big.g, 196, -56); sp('catFlag', 2, big.g, 44, -46);
+    const r1 = island(root, 'islandM', 3, 712, 176, -1.4);
+    div('waterfall', r1.g, 'left:70px;top:62px;height:190px;width:16px;z-index:-1');
+    sp('pine', 2, r1.g, 14, -58); sp('pine', 2, r1.g, 48, -52); sp('catFlag', 2, r1.g, 102, -46);
+    signboard(r1.g, 20, 40, 'BOARD<br>STUDIO');
+    island(root, 'islandS', 2, 430, 118, -0.7); island(root, 'islandS', 2, 604, 74, -2.1);
+    blimp(root, 34, 48);
+    clouds(root, [[60, 0, 'cloudL', 3], [500, 14, 'cloudS', 3], [820, 4, 'cloudL', 2]], 110, 286, 'opacity:.9');
+
+    // spike pit between the cliffs
+    div('abs pit', root, 'left:270px;top:430px;width:420px;height:110px');
+    tile(root, 'spikeTall', 2, 280, 486, 400, 56);
+    cliff(root, 0, 290, 'L'); cliff(root, 670, 290, 'R');
+    sp('pine', 3, root, 4, 312); sp('pine', 3, root, 890, 312);
+    const signL = woodSign(root, 36, 318, 'SHORT<br>CUT →');
+    const signR = woodSign(root, 806, 312, `TRAP<br>ZONE ${icon('skull', 2, 'vertical-align:-6px')}`); signR.style.opacity = 0;
+    lamp(root, 232, 318); lamp(root, 692, 318);
+    const cats = [sp('cat', 3, root, 172, 382), sp('cat', 3, root, 744, 382)];
+    flowers(root, [[100, 414, 0], [150, 424, 1], [220, 418, 2], [760, 420, 3], [840, 416, 0], [920, 424, 1]]);
+
+    // rope bridge
+    const x0 = 282, x1 = 678, deck = t => 434 + Math.sin(Math.PI * t) * 12, rail = t => 400 + Math.sin(Math.PI * t) * 6;
+    const pts = f => Array.from({ length: 25 }, (_, i) => { const t = i / 24; return `${Math.round(x0 + (x1 - x0) * t)},${Math.round(f(t))}`; }).join(' ');
+    const hang = Array.from({ length: 9 }, (_, i) => { const t = (i + 0.5) / 9, x = Math.round(x0 + (x1 - x0) * t); return [x, Math.round(rail(t)), Math.round(deck(t) + 4)]; });
+    const rope = (p, w, c) => `<polyline points="${p}" fill="none" stroke="${c}" stroke-width="${w}"/>`;
+    const ropes = div('abs', root, 'left:0;top:0;width:960px;height:540px;transition:opacity .15s steps(2)', `
+      <svg width="960" height="540" viewBox="0 0 960 540" shape-rendering="crispEdges" style="position:absolute;left:0;top:0">
+        ${rope(pts(rail), 7, '#07162F')}${rope(pts(rail), 3, '#B76C43')}
+        ${hang.map(([x, a, b]) => `<line x1="${x}" y1="${a}" x2="${x}" y2="${b}" stroke="#07162F" stroke-width="5"/><line x1="${x}" y1="${a}" x2="${x}" y2="${b}" stroke="#8C4E32" stroke-width="2"/>`).join('')}
+        ${rope(pts(t => deck(t) + 10), 7, '#07162F')}${rope(pts(t => deck(t) + 10), 3, '#8C4E32')}
+      </svg>`);
+    const planks = Array.from({ length: 12 }, (_, i) => { const t = (i + 0.5) / 12; return sp('plank', 3, root, Math.round(x0 + (x1 - x0) * t - 18), Math.round(deck(t) - 6)); });
+    sp('post', 3, root, x0 - 14, 384); sp('post', 3, root, x1 - 10, 384);
+
+    return { root, planks, ropes, signL, signR, cats, party: party(root, [364, 444, 524], 354, 'normal') };
   }
 
   /* ---------------- DUNGEON (trap zone) ---------------- */
   const PROPS = [
     { id: 'rock', x: 6, y: 420, s: 3, msg: '돌멩이다. 아무것도 없다.' },
-    { id: 'skull', x: 356, y: 448, s: 3, msg: '해골이 웃고 있다… 열쇠는 없다.' },
+    { id: 'skull', x: 606, y: 362, s: 3, msg: '해골이 웃고 있다… 열쇠는 없다.' },
     { id: 'crate', x: 598, y: 396, s: 3, msg: '텅 빈 상자다.' },
     { id: 'planks', x: 684, y: 432, s: 3, msg: '거미줄뿐이다.' },
     { id: 'chest', x: 804, y: 414, s: 3, msg: '누가 이미 털어갔다!' },
@@ -119,12 +157,15 @@ const SC = (() => {
   function buildDungeon() {
     const root = $('dungeon'); root.innerHTML = '';
     tile(root, 'wall', 3, 0, 0, 960, 390);
-    div('abs', root, 'left:0;top:0;width:960px;height:96px;background:linear-gradient(180deg,rgba(7,22,47,.75) 0 30%,rgba(7,22,47,.45) 30% 62%,rgba(7,22,47,.18) 62%)');
+    div('abs', root, 'left:0;top:0;width:960px;height:110px;background:linear-gradient(180deg,rgba(7,22,47,.75) 0 30%,rgba(7,22,47,.45) 30% 62%,rgba(7,22,47,.18) 62%)');
+    // glowing lava cracks in the back wall
+    [[596, 250], [700, 118], [150, 40]].forEach(([x, y]) => { sp('haloFire', 3, root, x + 28 - 69, y + 48 - 69, 'flicker'); sp('lavaCrack', 2, root, x, y); });
+    tile(root, 'spikeDown', 2, 0, 0, 960, 48);
     tile(root, 'floor', 3, 0, 386, 960, 160);
-    div('abs', root, 'left:0;top:382px;width:960px;height:8px;background:#1E2350;box-shadow:0 4px 0 #2B3268');
-    [[118, 60], [212, 132], [760, 168], [846, 96]].forEach(([x, h]) => tile(root, 'chain', 3, x, 0, 21, h, 'swing'));
+    div('abs', root, 'left:0;top:382px;width:960px;height:8px;background:#1C1836;box-shadow:0 4px 0 #2B2650');
+    [[118, 76], [212, 140], [920, 120]].forEach(([x, h]) => tile(root, 'chain', 3, x, 30, 21, h, 'swing'));
 
-    // exit door
+    // exit door (skull keystone)
     const door = div('abs', root, 'left:372px;top:118px;width:216px;height:272px');
     const doorRays = div('abs', door, 'left:-92px;top:-40px;width:400px;height:400px;opacity:0;transition:opacity .4s steps(4);background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(255,242,181,.8) 0 8deg,transparent 8deg 24deg);-webkit-mask:radial-gradient(circle,#000 0 30%,rgba(0,0,0,.5) 30% 50%,transparent 50%);mask:radial-gradient(circle,#000 0 30%,rgba(0,0,0,.5) 30% 50%,transparent 50%)');
     div('abs', door, 'left:40px;top:44px;width:136px;height:228px;background:#07162F');
@@ -134,34 +175,31 @@ const SC = (() => {
     [leafL, leafR].forEach(l => { l.style.transition = 'transform .9s steps(6)'; });
     sp('arch', 4, door, 0, 0);
 
-    // siren
     const sirenGlow = sp('haloRed', 3, root, 387, -2); sirenGlow.style.opacity = 0;
     sp('siren', 4, root, 450, 70);
 
-    // torches with stepped fire halos
     [292, 638].forEach(x => {
       sp('haloFire', 3, root, x + 15 - 69, 176 - 69, 'flicker');
       sp('torch', 3, root, x, 196);
       div('abs flame', root, `left:${x - 3}px;top:160px;background-image:url(${S.flame.url});image-rendering:pixelated`);
     });
+    // team banner
+    sp('banner', 3, root, 792, 64);
+    div('vss-text', root, 'left:804px;top:96px', 'VISUAL<br>SYSTEMS<br>SQUAD');
     sp('haloPurple', 3, root, 858, 266, 'flicker'); sp('crystal', 3, root, 900, 300);
     sp('haloBlue', 3, root, -40, 300, 'flicker'); sp('crystal', 2, root, 8, 352);
 
-    // hint tablet
     const tablet = div('abs tablet', root, 'left:34px;top:246px;width:168px;height:96px');
     const tabletGlow = sp('haloGold', 3, tablet, -20, -60); tabletGlow.style.opacity = 0;
     sp('tablet', 4, tablet, 0, 0);
     const tabletRunes = div('tablet-runes', tablet);
 
-
-    // lava moat + broken bridge + spikes
     const glow = div('lava-glow', root, 'left:0;top:430px;width:960px;height:76px');
     const lava = tile(root, 'lava', 3, 0, 504, 960, 36, 'lava');
     sp('bridgeL', 3, root, 404, 498); sp('bridgeR', 3, root, 560, 498);
     const spikes = [tile(root, 'spike', 2, 0, 472, 360, 32), tile(root, 'spike', 2, 600, 472, 360, 32)];
     spikes.forEach(s => { s.style.transition = 'transform .5s steps(5), opacity .5s steps(5)'; });
 
-    // searchable props
     const props = PROPS.map(p => {
       const el = div('prop', root, `left:${p.x}px;top:${p.y}px`);
       const img = sp(p.id, p.s, el);
@@ -170,45 +208,56 @@ const SC = (() => {
       return { ...p, el, img, cx: p.x + w / 2, cy: p.y + h / 2, w, h };
     });
 
-    // escape button
+    // escape button on its stone pedestal
     const btn = div('', root); btn.id = 'escBtn';
     div('rays', btn);
     sp('haloRed', 3, btn, null, null, 'glow');
     sp('pedestal', 3, btn, null, null, 'ped');
+    div('push-plate', btn, '', 'PUSH');
     const capwrap = div('capwrap', btn);
     sp('capUp', 3, capwrap, null, null, 'cap');
     const locks = div('locks', btn);
-    [62, -62].forEach(a => { const c = tile(locks, 'chain', 2, 77, 6, 14, 130); c.style.transform = `rotate(${a}deg)`; });
-    sp('lock', 4, locks, 58, 44);
+    [62, -62].forEach(a => { const c = tile(locks, 'chain', 2, 77, 2, 14, 130); c.style.transform = `rotate(${a}deg)`; });
+    sp('lock', 4, locks, 58, 36);
     const hitbox = div('hitbox', btn);
     const label = div('frame dark', root); label.id = 'escLabel';
 
+    // the team peeks over a low stone wall
     const P = party(root, [88, 176, 264], -160, 'dizzy');
     P.forEach(c => { c.el.style.zIndex = 5; });
+    tile(root, 'block', 3, 70, 436, 300, 36).style.zIndex = 6;
+    sp('cat', 3, root, 330, 393).style.zIndex = 7;
     return { root, door: { rays: doorRays, light, leafL, leafR }, sirenGlow, tablet, tabletGlow, tabletRunes, lava, glow, spikes, props, btn, locks, hitbox, label, party: P };
   }
 
-  /* ---------------- VICTORY ---------------- */
+  /* ---------------- VICTORY: VISUAL SYSTEMS HQ ---------------- */
   function buildVictory() {
     const root = $('victory'); root.innerHTML = '';
     div('sky', root);
-    div('abs spin', root, 'left:80px;top:-280px;width:800px;height:800px;opacity:.5;background:repeating-conic-gradient(from 0deg,rgba(255,242,181,.9) 0 7deg,transparent 7deg 20deg);-webkit-mask:radial-gradient(circle,#000 0 20%,rgba(0,0,0,.55) 20% 36%,rgba(0,0,0,.25) 36% 50%,transparent 50%);mask:radial-gradient(circle,#000 0 20%,rgba(0,0,0,.55) 20% 36%,rgba(0,0,0,.25) 36% 50%,transparent 50%);animation-duration:24s');
+    starsField(root, 16, 190);
+    div('abs spin', root, 'left:80px;top:-280px;width:800px;height:800px;opacity:.45;background:repeating-conic-gradient(from 0deg,rgba(255,242,181,.9) 0 7deg,transparent 7deg 20deg);-webkit-mask:radial-gradient(circle,#000 0 20%,rgba(0,0,0,.55) 20% 36%,rgba(0,0,0,.25) 36% 50%,transparent 50%);mask:radial-gradient(circle,#000 0 20%,rgba(0,0,0,.55) 20% 36%,rgba(0,0,0,.25) 36% 50%,transparent 50%);animation-duration:24s');
+    ocean(root, 330, 210);
     clouds(root, [[30, 70, 'cloudL', 3], [480, 150, 'cloudS', 3], [820, 60, 'cloudL', 2], [1100, 130, 'cloudS', 2]], 110);
     const a = island(root, 'islandM', 3, 18, 190, -1);
-    div('waterfall', a.g, 'left:70px;top:60px;height:260px;z-index:-1'); sp('castle', 2, a.g, 22, -80);
-    const b = island(root, 'islandM', 3, 800, 170, -2);
-    div('waterfall', b.g, 'left:52px;top:60px;height:260px;z-index:-1'); sp('tree', 2, b.g, 40, -64);
-    island(root, 'islandS', 2, 700, 60, -0.4); island(root, 'islandS', 2, 210, 40, -1.6);
-    const ship = div('abs drift', root, 'left:1000px;top:96px;animation-duration:36s'); sp('airship', 2, div('bobble', ship), 0, 0);
+    div('waterfall', a.g, 'left:70px;top:60px;height:200px;z-index:-1'); sp('castle', 2, a.g, 22, -94);
+    signboard(a.g, 6, 40, 'IMAGE LAB');
+    const b = island(root, 'islandM', 3, 800, 176, -2);
+    div('waterfall', b.g, 'left:52px;top:60px;height:200px;z-index:-1'); sp('pine', 2, b.g, 20, -58); sp('pine', 2, b.g, 56, -52); sp('catFlag', 2, b.g, 104, -46);
+    signboard(b.g, 18, 40, 'PIPELINE CORE');
+    island(root, 'islandS', 2, 700, 64, -0.4); island(root, 'islandS', 2, 214, 44, -1.6);
+    blimp(root, 96, 36);
     clouds(root, [[0, 0, 'cloudL', 4], [520, 20, 'cloudL', 3], [980, 4, 'cloudS', 4]], 80, 352);
+    tile(root, 'cliff', 3, 0, 450, 960, 90);
+    tile(root, 'grassTop', 3, 0, 424, 960, 30);
     sp('haloPortal', 3, root, 480 - 135, 336 - 135, 'flicker');
-    sp('portal', 3, root, 408, 236);
-    sp('tree', 4, root, -22, 272); sp('tree', 4, root, 856, 272);
-    [[300, 318], [642, 318]].forEach(([x, y]) => { sp('haloLamp', 3, root, x - 18, y - 30, 'flicker'); sp('lamp', 3, root, x, y); });
-    ground(root, 420);
-    flowers(root, [[20, 458, 0], [90, 490, 1], [180, 452, 2], [250, 500, 3], [330, 470, 0], [620, 470, 1], [700, 500, 2], [770, 456, 3], [850, 494, 0], [920, 462, 1], [140, 512, 3], [800, 516, 2]]);
-    [[190, 400], [720, 404]].forEach(([x, y]) => { const s = div('abs bobble', root, `left:${x}px;top:${y}px;animation-duration:.7s`); sp('slime', 3, s, 0, 0); });
-    const P = party(root, [352, 444, 536], 352, 'happy');
+    sp('hqGate', 3, root, 480 - 111, 268);
+    div('hq-sign', root, 'left:408px;top:313px;width:144px;line-height:24px', 'VISUAL SYSTEMS HQ');
+    sp('pine', 3, root, -4, 330); sp('pine', 3, root, 52, 342); sp('pine', 3, root, 846, 330); sp('pine', 3, root, 902, 342);
+    lamp(root, 300, 336); lamp(root, 642, 336);
+    sp('catFlag', 3, root, 336, 360); sp('catFlag', 3, root, 590, 360);
+    flowers(root, [[120, 440, 0], [180, 452, 1], [250, 444, 2], [330, 456, 3], [620, 452, 1], [700, 444, 2], [770, 456, 3], [850, 446, 0]]);
+    sp('cat', 3, root, 196, 402); sp('cat', 3, root, 720, 402);
+    const P = party(root, [352, 444, 536], 344, 'happy');
     return { root, party: P };
   }
 

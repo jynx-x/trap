@@ -165,9 +165,9 @@ button { font: inherit; }
 .blink-fast { animation: blink .4s steps(1) infinite; }
 
 /* ---------- characters ---------- */
-.char { position: absolute; width: 72px; height: 87px; transition: left .5s steps(10), top .5s steps(10); }
+.char { position: absolute; width: 72px; height: 88px; transition: left .5s steps(10), top .5s steps(10); }
 .char .body { position: absolute; left: 0; top: 0; animation: bob .7s steps(1) infinite; }
-.char .body img { width: 72px; height: 87px; image-rendering: pixelated; display: block; }
+.char .body img { width: 72px; height: 88px; image-rendering: pixelated; display: block; }
 .char .shadow { position: absolute; left: 14px; bottom: -4px; width: 44px; height: 8px; background: rgba(7, 22, 47, .35);
   box-shadow: -4px 2px 0 -2px rgba(7,22,47,.2); }
 @keyframes bob { 50% { transform: translateY(-3px); } }
@@ -229,7 +229,7 @@ button { font: inherit; }
 .dialog { left: 170px; right: 170px; bottom: 26px; min-height: 84px; padding: 18px 26px 16px 110px; font-size: 20px; line-height: 1.5; cursor: pointer; }
 .dialog .face { position: absolute; left: 18px; top: 50%; margin-top: -38px; width: 76px; height: 76px; background: var(--nv0); overflow: hidden;
   box-shadow: inset 0 0 0 3px var(--bl2); }
-.dialog .face img { position: absolute; left: 2px; top: 2px; width: 72px; height: 87px; image-rendering: pixelated; }
+.dialog .face img { position: absolute; left: 2px; top: 2px; width: 72px; height: 88px; image-rendering: pixelated; }
 .dialog .next { position: absolute; right: 16px; bottom: 10px; font-family: var(--px); font-size: 12px; color: var(--go2); animation: blink .6s steps(1) infinite; }
 
 /* ---------- HUD ---------- */
@@ -287,7 +287,7 @@ button { font: inherit; }
 #escBtn.ready .rays { opacity: 1; animation: spin 5s steps(30) infinite; }
 #escBtn .glow { left: 50%; top: 62%; width: 186px; height: 186px; margin: -93px 0 0 -93px; opacity: .55; }
 #escBtn.ready .glow { opacity: 1; animation: pulse .9s steps(3) infinite; }
-#escBtn .cap { left: 33px; top: 38px; width: 102px; height: 63px; transition: transform .08s steps(2); transform-origin: 50% 100%; }
+#escBtn .cap { left: 30px; top: 30px; width: 102px; height: 63px; transition: transform .08s steps(2); transform-origin: 50% 100%; }
 #escBtn .ped { left: 0; top: 80px; width: 168px; height: 78px; }
 #escBtn .hitbox { position: absolute; left: 20px; top: 20px; width: 128px; height: 120px; cursor: not-allowed; }
 #escBtn.ready .hitbox { cursor: pointer; }
@@ -345,8 +345,8 @@ button { font: inherit; }
 .tablet.glow .tablet-runes .ar { color: var(--go2); }
 
 /* ---------- title / clear ---------- */
-.logo .t1 { font-size: 76px; }
-.logo .t2 { font-size: 76px; margin-top: 18px; }
+.logo .t1 { font-size: 64px; }
+.logo .t2 { font-size: 64px; margin-top: 16px; }
 .press { font-family: var(--px); font-size: 12px; color: var(--cr); text-shadow: 2px 2px 0 var(--nv0); animation: blink 1s steps(1) infinite; }
 .confetti { position: absolute; width: 8px; height: 12px; pointer-events: none; }
 .checklist { padding: 14px 22px 12px; }
@@ -376,3 +376,60 @@ button { font: inherit; }
 .tablet-runes .step { font-family: var(--px); font-size: 10px; color: var(--go2); }
 .tablet-runes .qm { font-family: var(--px); font-size: 12px; color: #6F7FC4; letter-spacing: 2px; }
 .runes.busy { opacity: .5; }
+
+/* ---------- reference-style world details ---------- */
+.sky.night { background: linear-gradient(180deg, #07162F 0 14%, #0A1F46 14% 30%, #102A5B 30% 46%, #163766 46% 58%, #1D4E9E 58% 70%, #2869C7 70%); }
+.twk { animation: twk 1.6s steps(2) infinite; }
+@keyframes twk { 50% { opacity: .25; } }
+.ocean { position: absolute; left: 0; width: 960px; overflow: hidden;
+  background: linear-gradient(180deg, #54B8F7 0 3%, #2869C7 3% 16%, #1D4E9E 16% 38%, #163766 38% 66%, #102A5B 66%); }
+.ocean .wv { position: absolute; left: 0; width: 1400px; height: 3px; animation: wave 5s steps(10) infinite;
+  background: repeating-linear-gradient(90deg, rgba(138, 215, 255, .8) 0 14px, transparent 14px 58px); }
+@keyframes wave { from { transform: translateX(0); } to { transform: translateX(-58px); } }
+.pit { background: linear-gradient(180deg, #102A5B 0 12%, #0A1F46 12% 38%, #07162F 38%); }
+.blimp-text { position: absolute; left: 38px; top: 20px; width: 128px; font-family: var(--px); font-size: 8px; line-height: 1.9; color: #163766; text-align: center; }
+.signboard { position: absolute; background: #102A5B; color: var(--cr); font-family: var(--px); font-size: 8px; line-height: 1.6; text-align: center; padding: 6px 8px 4px; white-space: nowrap;
+  box-shadow: inset 0 0 0 2px #2A3F78, 0 -3px 0 var(--nv0), 0 3px 0 var(--nv0), -3px 0 0 var(--nv0), 3px 0 0 var(--nv0), 0 6px 0 rgba(7, 22, 47, .4); }
+.woodsign { position: absolute; text-align: center; }
+.woodsign .board { position: relative; padding: 9px 12px 7px; font-family: var(--px); font-size: 11px; line-height: 1.5; color: var(--pk1); white-space: nowrap;
+  background: repeating-linear-gradient(180deg, #8C4E32 0 8px, #7A4128 8px 10px); text-shadow: 2px 2px 0 var(--nv0);
+  box-shadow: inset 3px 3px 0 #B76C43, inset -3px -3px 0 #5E3220, 0 -3px 0 var(--nv0), 0 3px 0 var(--nv0), -3px 0 0 var(--nv0), 3px 0 0 var(--nv0); }
+.woodsign .pole { width: 9px; height: 38px; margin: 0 auto; background: #6B3E22; box-shadow: -3px 0 0 var(--nv0), 3px 0 0 var(--nv0), inset 3px 0 0 #8C4E32; }
+.vss-text { position: absolute; width: 72px; font-family: var(--px); font-size: 8px; line-height: 1.9; color: var(--cr); text-align: center; text-shadow: 2px 2px 0 #7A0F1E; pointer-events: none; }
+#escBtn .push-plate { position: absolute; left: 51px; top: 117px; width: 66px; height: 30px; display: flex; align-items: center; justify-content: center;
+  font-family: var(--px); font-size: 13px; color: var(--cr); text-shadow: 2px 2px 0 var(--nv0); }
+.hq-sign { position: absolute; font-family: var(--px); font-size: 7px; color: var(--cr); text-align: center; line-height: 21px; white-space: nowrap; }
+
+/* title: logo ribbon + corner credits */
+.ribbon { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 12px; background: #8AD7FF; color: #0A1F46; font-family: var(--px); font-size: 14px; padding: 10px 22px 8px; white-space: nowrap;
+  box-shadow: inset 0 3px 0 #C8EEFF, inset 0 -4px 0 #54B8F7, 0 -4px 0 var(--nv0), 0 4px 0 var(--nv0), -4px 0 0 var(--nv0), 4px 0 0 var(--nv0); }
+.ribbon::before, .ribbon::after { content: ''; position: absolute; top: 12px; width: 34px; height: 100%; background: #54B8F7; z-index: -1;
+  box-shadow: 0 -4px 0 var(--nv0), 0 4px 0 var(--nv0), -4px 0 0 var(--nv0), 4px 0 0 var(--nv0); }
+.ribbon::before { left: -28px; clip-path: polygon(-8px -8px, 100% -8px, 100% calc(100% + 8px), -8px calc(100% + 8px), 45% 50%); }
+.ribbon::after { right: -28px; clip-path: polygon(-8px -8px, calc(100% + 8px) -8px, 55% 50%, calc(100% + 8px) calc(100% + 8px), -8px calc(100% + 8px)); }
+.tagline { font-family: var(--px); font-size: 10px; color: var(--cr); text-shadow: 2px 2px 0 var(--nv0); white-space: nowrap; }
+.corner { position: absolute; font-family: var(--px); font-size: 9px; line-height: 1.8; color: var(--cr); text-shadow: 2px 2px 0 var(--nv0); white-space: nowrap; }
+.loadbar { display: inline-block; vertical-align: middle; width: 96px; height: 12px; margin-left: 8px; background: var(--nv0); box-shadow: inset 0 0 0 2px var(--bl2); position: relative; }
+.loadbar i { position: absolute; left: 2px; top: 2px; bottom: 2px; width: 0; background: linear-gradient(90deg, #FF5663 0 55%, #FF8BC7 55%); animation: load 2.4s steps(12) infinite; }
+@keyframes load { to { width: 92px; } }
+
+/* EMERGENCY sign: dark plate, hazard stripes, siren rays, warning triangles */
+.emg { width: 640px; height: 250px; }
+.emg-plate { position: absolute; left: 24px; right: 24px; top: 92px; height: 118px; background: #1A0E2A;
+  box-shadow: inset 0 0 0 4px #3A1A3A, 0 -5px 0 var(--nv0), 0 5px 0 var(--nv0), -5px 0 0 var(--nv0), 5px 0 0 var(--nv0),
+    0 0 0 14px rgba(255, 59, 71, .32), 0 0 0 24px rgba(255, 59, 71, .16), 0 0 0 34px rgba(255, 59, 71, .07); }
+.emg-plate .hz { position: absolute; left: 14px; right: 14px; height: 14px; background: repeating-linear-gradient(135deg, var(--wy0) 0 12px, var(--nv0) 12px 24px); box-shadow: 0 0 0 3px var(--nv0); }
+.emg-plate .hz:first-child { top: -7px; } .emg-plate .hz:last-child { bottom: -7px; }
+.emg-t { position: absolute; left: 0; right: 0; top: 34px; font-size: 52px; text-align: center; }
+.emg-rays { position: absolute; left: 50%; top: 50px; }
+.emg-rays i { position: absolute; left: -4px; bottom: 44px; width: 8px; height: 24px; background: var(--rd3); box-shadow: 0 0 0 3px var(--nv0); transform-origin: 4px 68px; animation: blink .4s steps(1) infinite; }
+
+/* final phase sign above the button */
+.final-sign { position: absolute; z-index: 12; left: 50%; top: 34px; width: 380px; margin-left: -190px; padding: 30px 14px 14px; text-align: center; background: #1C1734;
+  box-shadow: inset 0 0 0 4px #5E588F, inset 0 0 0 8px #1C1734, inset 0 0 0 10px #332C56,
+    0 -4px 0 var(--nv0), 0 4px 0 var(--nv0), -4px 0 0 var(--nv0), 4px 0 0 var(--nv0), 0 12px 0 rgba(7, 22, 47, .45); }
+.final-sign .fs1 { font-size: 21px; }
+.final-sign .trap { font-family: var(--px); font-size: 24px; color: var(--rd3); margin-right: 2px;
+  text-shadow: -3px -3px 0 var(--nv0), 3px -3px 0 var(--nv0), -3px 3px 0 var(--nv0), 3px 3px 0 var(--nv0), 0 6px 0 var(--rd0), 0 9px 0 var(--nv0); }
+.final-sign .fs2 { font-size: 24px; margin-top: 10px; }
+.final-sign .fs3 { margin-top: 10px; font-family: var(--px); font-size: 10px; color: var(--go2); text-shadow: 2px 2px 0 var(--nv0); animation: blink .8s steps(1) infinite; }

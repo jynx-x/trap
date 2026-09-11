@@ -137,8 +137,11 @@
     ui.innerHTML = ''; $('vignette').className = ''; $('fx').innerHTML = '';
     const M = SC.buildMeadow(); show('meadow');
     const t = div('abs', ui, 'left:0;top:0;width:960px;height:540px;pointer-events:none');
-    div('center logo', t, 'top:128px', '<div class="ttl red t1">TRAP</div><div class="ttl gold t2">ESCAPE</div>');
-    div('center ttl sm blue', t, 'top:236px;font-size:13px', 'PIXEL DUNGEON MINI GAME');
+    div('center logo', t, 'top:104px', '<div class="ttl red t1">TRAP</div><div class="ttl blue t2">ESCAPE</div>');
+    div('center', t, 'top:214px', `<div class="ribbon">${icon('sparkle', 2)}VISUAL SYSTEMS SQUAD${icon('sparkle', 2)}</div>`);
+    div('center tagline', t, 'top:248px', '- ONE PUSH, A BRIGHTER TOMORROW -');
+    div('corner', t, 'left:22px;bottom:16px', `${icon('heart', 2)}${icon('heart', 2, 'margin-left:4px')}${icon('heart', 2, 'margin-left:4px')}<span class="loadbar"><i></i></span><br>LOADING...<br>A MORE VISUAL WORLD`);
+    div('corner', t, 'right:22px;bottom:16px;text-align:right', 'v1.0<br>VISUAL SYSTEMS SQUAD<br>ALL RIGHTS RESERVED.');
     const wrap = div('abs', t, 'left:0;right:0;top:262px;display:flex;justify-content:center;pointer-events:auto');
     const b = document.createElement('button');
     b.className = 'pbtn'; b.style.position = 'relative'; b.innerHTML = '▶ START';
@@ -169,24 +172,39 @@
     await sleep(1800);
     M.party.forEach(c => c.mode(null));
 
-    // 2) sudden accident
+    // 2) the bridge creaks — wrong path!
     SND.stop(); SND.warning(); SC.flash(true);
     M.party.forEach(c => { c.setFace('shock'); c.say('!!', 1200); c.mode('recoil'); });
+    M.planks.forEach((p, i) => { p.style.animationDelay = `${(i % 3) * 0.06}s`; p.classList.add('wiggle'); });
+    M.signL.querySelector('.board').innerHTML = `WRONG<br>PATH! ${icon('skull', 2, 'vertical-align:-6px')}`;
+    M.signL.classList.add('wiggle');
+    M.signR.style.opacity = 1; M.signR.classList.add('pop');
+    M.cats.forEach(c => { c.src = SPR.catShock.url; c.classList.add('recoil-cat'); });
     const w = div('center ghost pop-c band band-red', ui, 'top:176px', '<div class="ttl rtxt blink" style="font-size:36px">!!! WARNING !!!</div>');
-    M.cracks.style.opacity = 1;
-    SND.rumble(1.6); SC.shake(1500);
-    await sleep(900);
-    M.party.forEach(c => c.setFace('panic'));
-    M.hole.style.transform = 'scaleX(1)';
-    await sleep(380);
-    SND.fall();
-    M.party.forEach((c, i) => {
-      c.el.style.transition = 'top .7s steps(7), transform .7s steps(7)';
-      c.el.style.top = '660px'; c.el.style.transform = `rotate(${(i % 2 ? 1 : -1) * 50}deg)`;
-    });
-    M.party[1].say('으아악!', 800, true);
-    await sleep(650);
+    SND.rumble(1.4); SC.shake(1200);
+    await sleep(950);
     w.remove();
+
+    // 3) snap! the bridge breaks and everyone falls — EMERGENCY
+    SND.cut(); SND.fall();
+    M.ropes.style.opacity = 0;
+    M.planks.forEach((p, i) => p.animate(
+      [{ transform: 'translate(0,0) rotate(0)' }, { transform: `translate(${(Math.random() - 0.5) * 140}px, ${240 + Math.random() * 120}px) rotate(${(Math.random() - 0.5) * 540}deg)` }],
+      { duration: 900 + Math.random() * 400, delay: Math.abs(i - 6) * 40, easing: 'steps(12)', fill: 'forwards' }));
+    M.party.forEach((c, i) => {
+      c.setFace('panic');
+      c.el.style.transition = 'top 1.7s steps(17), transform 1.7s steps(17)';
+      c.el.style.top = '640px'; c.el.style.transform = `rotate(${(i % 2 ? 1 : -1) * 30}deg)`;
+    });
+    M.party[1].say('으아악!', 1100, true);
+    $('vignette').className = 'on'; SND.alarm(); SC.flash(true); SC.shake(900);
+    const EMG = `
+      <div class="emg-rays">${[0, 1, 2, 3, 4, 5, 6].map(i => `<i style="transform:rotate(${-66 + i * 22}deg)"></i>`).join('')}</div>
+      ${icon('siren', 5, 'position:absolute;left:50%;top:22px;margin-left:-37px;z-index:2')}
+      <div class="emg-plate"><div class="hz"></div><div class="ttl rtxt emg-t">EMERGENCY</div><div class="hz"></div></div>
+      ${[['left:-30px;top:64px', 0], ['left:6px;top:196px', 0.3], ['right:-30px;top:64px', 0.15], ['right:6px;top:196px', 0.45]]
+        .map(([pos, d]) => icon('warnRed', 4, `position:absolute;${pos};animation-delay:${d}s;animation-duration:.6s`).replace('<img', '<img class="bobble"')).join('')}`;
+    await banner(EMG, 2000, 196, 'emg');
     const blk = div('abs ghost', ui, 'left:0;top:0;width:960px;height:540px;background:#07162F;opacity:0;transition:opacity .25s steps(3);z-index:40');
     void blk.offsetWidth; blk.style.opacity = 1;
     await sleep(420);
@@ -203,12 +221,12 @@
     }
     await sleep(500);
 
-    // 4) EMERGENCY
+    // 4) TRAP ZONE
     S.phase = 'trap';
-    $('vignette').className = 'on'; D.sirenGlow.style.opacity = ''; D.sirenGlow.classList.add('blink');
-    SND.alarm(); SC.flash(true); SC.shake(600);
+    D.sirenGlow.style.opacity = ''; D.sirenGlow.classList.add('blink');
+    SC.flash(true); SC.shake(500);
     faces('panic');
-    await banner(`${icon('siren', 5)}<div class="ttl rtxt" style="font-size:60px;margin-top:14px">EMERGENCY</div><div class="ttl md red" style="font-size:22px;margin-top:30px">TRAP ZONE</div>`, 2300, 230, 'band band-red');
+    await banner(`${icon('skull', 4)}<div class="ttl rtxt" style="font-size:44px;margin-top:16px">TRAP ZONE</div>`, 1600, 220, 'band band-red');
     SND.play('dungeon');
     const arrow = div('abs ghost ttl gold', ui, 'left:470px;top:262px;font-size:20px;z-index:21', '▼');
     arrow.classList.add('bobble'); arrow.style.animationDuration = '.4s';
@@ -502,8 +520,16 @@
     SC.particles(480, 390, 24, ['#AEB9E0', '#7885B5', '#E2E8FF', '#FFC94D'], { dist: 110 });
     D.locks.animate([{ transform: 'translateY(0)', opacity: 1 }, { transform: 'translateY(60px) rotate(20deg)', opacity: 0 }], { duration: 500, easing: 'steps(5)', fill: 'forwards' });
     D.btn.classList.add('ready'); escLabel();
-    questSign('FINAL', 'MASH TO ESCAPE!', '버튼을 연타해서 게이지를 채워라!');
-    faces('happy'); D.party[0].say('지금이야!', 1500, true);
+    const q = $('quest'); if (q) q.remove();
+    div('final-sign pop', ui, '', `
+      ${icon('skull', 4, 'position:absolute;left:50%;top:-24px;margin-left:-28px')}
+      ${icon('warnRed', 3, 'position:absolute;left:-30px;top:26px')}${icon('warnRed', 3, 'position:absolute;right:-30px;top:26px')}
+      <div class="fs1 outline-ko"><span class="trap">TRAP</span>을 탈출하기 위해</div>
+      <div class="fs2 outline-ko">이 <span style="color:#FFD95F">버튼</span>을 누르시오!</div>
+      <div class="fs3">MASH TO ESCAPE!</div>`);
+    SND.whoosh();
+    faces('happy'); D.party[0].say('누르면 탈출할 수 있어!', 1800, true);
+    setTimeout(() => D.party[2] && D.party[2].say('지금이야!', 1600, true), 500);
     await banner(`${icon('lock', 4)}<div class="ttl gold" style="font-size:30px;margin-top:18px">ESCAPE BUTTON</div><div class="ttl md blue" style="font-size:24px;margin-top:22px">UNLOCKED</div>`, 1400, 200);
     faces('focus');
     D.party[1].say('연타! 연타!', 1600, true);

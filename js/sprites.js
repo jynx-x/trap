@@ -18,7 +18,7 @@
     st0: '#1E2350', st1: '#2B3268', st2: '#3A4583', st3: '#5160A6', st4: '#6F7FC4',
     wd0: '#5E3220', wd1: '#8C4E32', wd2: '#B76C43', wd3: '#D9925A',
     mt0: '#4A5680', mt1: '#7885B5', mt2: '#AEB9E0', mt3: '#E2E8FF',
-    mouth: '#8E1F3A',
+    mouth: '#8E1F3A', eye: '#0E1633',
   };
   const col = c => C[c] || c;
 
@@ -84,107 +84,138 @@
   const SPR = {};
   const reg = (name, cv) => { SPR[name] = { url: cv.toDataURL(), w: cv.width, h: cv.height, cv }; return SPR[name]; };
 
-  /* ---------------- CHARACTERS ---------------- */
+  /* ---------------- CHARACTERS (36×44 grid, shown at 2×) ----------------
+     big head, tiny body, dark navy team hoodie; hair tells them apart */
   const HAIR = {
-    dark:   { s: '#0E0F1E', b: '#1E2038', h: '#3B3F6E' },
-    brown:  { s: '#5E3220', b: '#8C4E32', h: '#B76C43' },
-    blonde: { s: '#C28A42', b: '#E8B86E', h: '#FFD98C' },
-    purple: { s: '#4A2870', b: '#6D3F9D', h: '#9D61C8' },
+    dark: { s: '#0B0C1A', b: '#1E2140', h: '#3A4178', x: '#5C66A8' },
+    blonde: { s: '#C4843A', b: '#EDBD6A', h: '#FFDB8A', x: '#FFF1C4' },
+    purple: { s: '#46266C', b: '#7446A8', h: '#A56ED8', x: '#CFA2F4' },
   };
   const TEAM = [
-    { id: 'jin', hair: 'dark', style: 'spiky' },
-    { id: 'mia', hair: 'blonde', style: 'pony' },
-    { id: 'yuna', hair: 'purple', style: 'buns' },
+    { id: 'jin', hair: 'dark', style: 'buns' },
+    { id: 'mia', hair: 'blonde', style: 'twin' },
+    { id: 'yuna', hair: 'purple', style: 'pony' },
   ];
   const FACES = ['normal', 'shock', 'panic', 'dizzy', 'focus', 'happy'];
+  const CX = 18;
 
-  function drawHair(P, style, H) {
-    // base cap over the head
-    P.r(5, 4, 14, 1, H.b); P.r(4, 5, 16, 4, H.b);
-    P.r(4, 9, 16, 1, H.s);
-    if (style === 'spiky') {
-      [[6, 3], [7, 2], [10, 2], [11, 1], [14, 2], [15, 3], [17, 3], [18, 4], [5, 3]].forEach(([x, y]) => P.r(x, y, 1, 4 - y + 1, H.b));
-      P.r(4, 10, 1, 3, H.b); P.r(19, 10, 1, 3, H.b);
-      P.r(5, 10, 3, 1, H.b); P.r(12, 10, 3, 1, H.b); P.px(9, 10, H.s);
-      P.r(7, 5, 4, 1, H.h); P.px(11, 2, H.h); P.px(7, 3, H.h);
-    } else if (style === 'pony') {
-      P.r(6, 3, 12, 1, H.b);
-      P.r(20, 6, 2, 3, H.b); P.r(20, 9, 3, 4, H.b); P.r(21, 13, 2, 2, H.s); P.px(20, 8, H.h);
-      P.r(4, 10, 1, 4, H.b); P.r(19, 10, 1, 3, H.b);
-      P.r(5, 10, 5, 1, H.b); P.r(13, 10, 5, 1, H.b); P.px(10, 10, H.s);
-      P.r(20, 5, 1, 1, '#FF70B6'); P.r(19, 6, 1, 2, '#FF70B6'); // scrunchie
-      P.r(7, 5, 5, 1, H.h); P.r(6, 6, 2, 1, H.h);
-    } else if (style === 'bob') {
-      P.r(6, 3, 12, 1, H.b);
-      P.r(3, 7, 2, 9, H.b); P.r(19, 7, 2, 9, H.b); P.r(3, 14, 2, 2, H.s); P.r(19, 14, 2, 2, H.s);
-      P.r(5, 10, 14, 1, H.b); P.px(9, 10, H.s); P.px(14, 10, H.s);
-      P.r(7, 5, 5, 1, H.h); P.r(4, 8, 1, 3, H.h);
-    } else if (style === 'buns') {
-      P.disc(4.5, 3.5, 3, 3, H.b); P.disc(19.5, 3.5, 3, 3, H.b);
-      P.px(3, 2, H.h); P.px(18, 2, H.h); P.px(4, 2, H.h);
-      P.r(6, 3, 12, 1, H.b);
-      P.r(4, 10, 1, 4, H.b); P.r(19, 10, 1, 4, H.b);
-      P.r(5, 10, 4, 1, H.b); P.r(15, 10, 4, 1, H.b); P.r(10, 10, 4, 1, H.b);
-      P.r(8, 5, 5, 1, H.h); P.r(7, 6, 2, 1, H.h);
+  function hairCap(P, H) {
+    for (let y = 4; y <= 15; y++) {
+      const t = (y + 0.5 - 15) / 11, hw = 13.6 * Math.sqrt(Math.max(0, 1 - t * t));
+      P.r(Math.round(CX - hw), y, Math.round(hw * 2), 1, H.b);
+    }
+    P.r(11, 7, 6, 1, H.h); P.r(9, 8, 5, 1, H.h); P.r(8, 9, 2, 1, H.h); P.px(12, 7, H.x); P.px(13, 7, H.x);
+    P.r(21, 7, 3, 1, H.h); P.r(23, 8, 2, 1, H.h);
+    P.r(6, 13, 24, 1, H.s);
+  }
+
+  function backHair(P, m, H) {
+    if (m.style === 'twin') {
+      [4.5, 31.5].forEach((cx, i) => {
+        P.disc(cx, 22, 3.3, 8.6, H.b);
+        P.r(Math.round(cx) - (i ? 0 : 1), 17, 1, 8, H.h);
+        P.r(Math.round(cx) - 2, 28, 4, 2, H.s);
+      });
+    } else if (m.style === 'pony') {
+      P.disc(29.5, 14, 4.2, 10.5, H.b);
+      P.r(31, 8, 1, 12, H.h); P.r(28, 21, 4, 3, H.s); P.px(30, 25, H.s);
     }
   }
+
+  function frontHair(P, m, H) {
+    hairCap(P, H);
+    if (m.style === 'buns') {
+      P.r(4, 15, 3, 10, H.b); P.r(29, 15, 3, 10, H.b); P.r(5, 25, 2, 1, H.b); P.r(29, 25, 2, 1, H.b);
+      P.r(6, 16, 1, 9, H.s); P.r(29, 16, 1, 9, H.s);
+      P.r(7, 14, 22, 3, H.b);
+      [11, 17, 23].forEach(x => P.r(x, 15, 1, 2, H.s));
+      P.r(9, 14, 3, 1, H.h); P.r(19, 14, 3, 1, H.h);
+      P.disc(8.5, 5, 4.5, 4.5, H.b); P.disc(27.5, 5, 4.5, 4.5, H.b);
+      P.r(6, 2, 2, 1, H.h); P.px(5, 3, H.h); P.r(25, 2, 2, 1, H.h); P.px(24, 3, H.h);
+      P.r(6, 8, 5, 1, H.s); P.r(25, 8, 5, 1, H.s);
+      P.r(11, 4, 2, 2, 'go1'); P.px(11, 4, 'go4'); P.r(23, 4, 2, 2, 'go1'); P.px(24, 4, 'go4');
+    } else if (m.style === 'twin') {
+      P.r(6, 14, 24, 2, H.b); P.r(7, 16, 10, 1, H.b); P.r(21, 16, 9, 1, H.b); P.r(8, 17, 3, 1, H.b); P.r(27, 17, 2, 1, H.b);
+      P.px(13, 16, H.s); P.px(24, 16, H.s); P.r(17, 15, 1, 1, H.s);
+      P.r(4, 14, 2, 8, H.b); P.r(30, 14, 2, 8, H.b);
+      P.r(9, 14, 4, 1, H.h);
+      P.r(2, 13, 4, 2, 'pk0'); P.r(30, 13, 4, 2, 'pk0'); P.px(3, 13, 'pk1'); P.px(31, 13, 'pk1');
+      P.r(24, 11, 3, 1, 'bl3'); P.px(24, 11, 'bl4');
+      P.px(18, 3, H.b); P.px(19, 2, H.b); P.px(20, 2, H.h); // ahoge
+    } else if (m.style === 'pony') {
+      P.r(6, 14, 24, 2, H.b); P.r(6, 16, 12, 1, H.b); P.r(7, 17, 4, 1, H.b); P.px(7, 18, H.b);
+      P.r(22, 16, 8, 1, H.b); P.px(28, 17, H.b);
+      P.px(18, 16, H.s); P.px(12, 16, H.s);
+      P.r(4, 14, 3, 11, H.b); P.r(29, 14, 3, 8, H.b); P.r(6, 16, 1, 8, H.s);
+      P.disc(24.5, 4, 3.4, 2.6, H.b); P.r(23, 2, 3, 1, H.h);
+      P.r(26, 4, 3, 3, 'pk0'); P.px(26, 4, 'pk1');
+      P.r(8, 14, 4, 1, H.h);
+    }
+  }
+
+  const EYES = {
+    normal: ['.xx.', 'xwxx', 'xxxx', 'xxbx', '.xx.'],
+    shock: ['.xx.', 'xccx', 'xcxx', 'xccx', '.xx.'],
+    dizzy: ['x..x', '.xx.', '.xx.', 'x..x', '....'],
+    focus: ['....', 'xxxx', 'xwxx', '.xx.', '....'],
+    happy: ['....', '.xx.', 'x..x', '....', '....'],
+  };
+  const PANIC_L = ['x...', '.x..', '..xx', '.x..', 'x...'];
+  const PANIC_R = ['...x', '..x.', 'xx..', '..x.', '...x'];
+  const MOUTH = {
+    normal: ['.m..m.', '..mm..'],
+    shock: ['..mm..', '.mddm.', '..mm..'],
+    panic: ['.mmmm.', 'mddddm', 'mdppdm', '.mmmm.'],
+    dizzy: ['m.m.m.', '.m.m.m'],
+    focus: ['.mmmm.'],
+    happy: ['mmmmmm', 'mddddm', '.mppm.', '..mm..'],
+  };
+  const EYE_L = { x: 'eye', w: 'wh', b: 'bl3', c: 'cr' };
+  const MOUTH_L = { m: 'mouth', d: '#4A0C1E', p: 'pk0' };
 
   function drawFace(P, face) {
-    const E = 'nv0', blush = () => { P.r(5, 14, 2, 1, 'pk1'); P.r(17, 14, 2, 1, 'pk1'); };
-    if (face === 'normal') {
-      P.r(7, 11, 2, 3, E); P.r(15, 11, 2, 3, E); P.px(7, 11, 'cr'); P.px(15, 11, 'cr');
-      P.r(11, 15, 2, 1, 'mouth'); blush();
-    } else if (face === 'shock') {
-      P.r(7, 11, 2, 3, E); P.r(15, 11, 2, 3, E); P.r(7, 11, 1, 2, 'cr'); P.r(15, 11, 1, 2, 'cr');
-      P.r(11, 15, 2, 2, 'mouth');
-    } else if (face === 'panic') {
-      P.r(6, 10, 4, 5, E); P.r(14, 10, 4, 5, E);
-      P.r(7, 11, 2, 3, 'cr'); P.r(15, 11, 2, 3, 'cr'); P.px(8, 12, E); P.px(15, 12, E);
-      P.r(10, 15, 4, 2, 'mouth'); P.r(11, 16, 2, 1, 'rd3');
-      P.r(21, 9, 1, 2, 'bl3'); P.px(22, 11, 'bl4'); P.px(21, 11, 'bl3'); // sweat
-    } else if (face === 'dizzy') {
-      [[6, 11], [8, 11], [7, 12], [6, 13], [8, 13]].forEach(([x, y]) => { P.px(x, y, E); P.px(x + 9, y, E); });
-      P.px(10, 16, 'mouth'); P.px(11, 15, 'mouth'); P.px(12, 16, 'mouth'); P.px(13, 15, 'mouth');
-      P.r(21, 8, 1, 2, 'bl3');
-    } else if (face === 'focus') {
-      P.r(7, 12, 2, 2, E); P.r(15, 12, 2, 2, E); P.px(7, 12, 'cr'); P.px(15, 12, 'cr');
-      P.r(6, 10, 2, 1, E); P.px(8, 11, E); P.r(16, 10, 2, 1, E); P.px(15, 11, E);
-      P.r(11, 15, 2, 1, 'mouth');
-    } else if (face === 'happy') {
-      P.px(6, 13, E); P.r(7, 12, 2, 1, E); P.px(9, 13, E);
-      P.px(14, 13, E); P.r(15, 12, 2, 1, E); P.px(17, 13, E);
-      P.r(10, 15, 4, 1, 'mouth'); P.r(11, 16, 2, 1, 'rd3'); blush();
+    if (face === 'panic') { P.map(PANIC_L, EYE_L, 11, 17); P.map(PANIC_R, EYE_L, 21, 17); }
+    else { P.map(EYES[face], EYE_L, 11, 17); P.map(EYES[face], EYE_L, 21, 17); }
+    P.map(MOUTH[face], MOUTH_L, 15, 23);
+    if (face === 'normal' || face === 'happy' || face === 'shock') {
+      P.r(8, 22, 3, 1, 'pk1'); P.r(25, 22, 3, 1, 'pk1'); P.px(8, 22, '#FFB3D1'); P.px(25, 22, '#FFB3D1');
     }
+    if (face === 'panic' || face === 'dizzy') {
+      P.r(33, 9, 1, 2, 'bl3'); P.px(32, 11, 'bl3'); P.px(33, 11, 'bl4'); P.px(32, 12, 'bl3');
+    }
+    if (face === 'panic') { P.r(12, 22, 1, 2, 'bl4'); P.r(23, 22, 1, 2, 'bl4'); }
   }
 
-  function drawChar(member, face) {
-    const H = HAIR[member.hair], up = face === 'happy';
-    return make(24, 29, P => {
-      // shoes + legs
-      P.r(8, 25, 3, 1, 'un0'); P.r(13, 25, 3, 1, 'un0');
-      P.r(7, 26, 4, 2, 'bl1'); P.r(13, 26, 4, 2, 'bl1'); P.px(7, 26, 'bl3'); P.px(13, 26, 'bl3');
-      // torso: dark navy team uniform
-      P.r(7, 18, 10, 7, 'un1'); P.r(7, 18, 1, 7, 'un2'); P.r(7, 23, 10, 2, 'un0');
-      P.r(10, 18, 4, 1, 'un2'); P.px(11, 19, 'cr'); P.px(12, 19, 'cr'); // collar
-      P.r(13, 20, 2, 2, 'bl3'); P.px(13, 20, 'bl4'); // team logo
-      // arms
-      if (up) {
-        P.r(4, 14, 2, 5, 'un1'); P.r(18, 14, 2, 5, 'un1'); P.r(5, 17, 2, 2, 'un1'); P.r(17, 17, 2, 2, 'un1');
-        P.r(4, 12, 2, 2, 'sk0'); P.r(18, 12, 2, 2, 'sk0');
-      } else {
-        P.r(5, 19, 2, 4, 'un1'); P.r(17, 19, 2, 4, 'un1'); P.px(5, 19, 'un2');
-        P.r(5, 23, 2, 1, 'sk0'); P.r(17, 23, 2, 1, 'sk0');
+  function drawChar(m, face) {
+    const H = HAIR[m.hair], up = face === 'happy' || face === 'panic';
+    return make(36, 44, P => {
+      backHair(P, m, H);
+      // legs + shoes
+      P.r(13, 37, 4, 3, 'un0'); P.r(19, 37, 4, 3, 'un0');
+      P.r(12, 40, 5, 2, 'nv3'); P.r(19, 40, 5, 2, 'nv3'); P.px(13, 40, 'bl1'); P.px(20, 40, 'bl1');
+      P.r(12, 42, 5, 1, 'cr2'); P.r(19, 42, 5, 1, 'cr2');
+      // navy team hoodie
+      P.r(11, 28, 14, 10, 'un1'); P.r(11, 28, 2, 10, 'un2'); P.r(11, 36, 14, 2, 'un0');
+      P.r(15, 28, 6, 1, 'cr'); P.r(16, 29, 4, 1, 'cr'); P.r(17, 30, 2, 1, 'cr');
+      P.r(18, 31, 1, 5, 'un0');
+      P.px(13, 31, 'cr'); P.px(15, 31, 'cr'); P.r(13, 32, 3, 1, 'cr'); // tiny cat logo
+      if (!up) {
+        P.r(8, 29, 3, 6, 'un1'); P.r(25, 29, 3, 6, 'un1'); P.px(8, 29, 'un2'); P.px(9, 29, 'un2');
+        P.r(8, 35, 3, 2, 'sk0'); P.r(25, 35, 3, 2, 'sk0');
       }
-      // head (big, round)
-      P.r(5, 7, 14, 11, 'sk0'); P.r(4, 8, 16, 9, 'sk0');
-      P.r(5, 17, 14, 1, 'sk1'); P.r(4, 16, 1, 1, 'sk1'); P.r(19, 16, 1, 1, 'sk1');
-      P.px(6, 8, 'sk2');
-      drawHair(P, member.style, H);
+      // big round head
+      P.disc(18, 17.5, 12.5, 11, 'sk0');
+      P.r(12, 27, 12, 1, 'sk1'); P.px(9, 12, 'sk2'); P.px(10, 11, 'sk2');
+      frontHair(P, m, H);
       drawFace(P, face);
+      if (up) { // arms up: \(^o^)/
+        P.r(5, 19, 3, 10, 'un1'); P.r(28, 19, 3, 10, 'un1'); P.r(8, 27, 3, 2, 'un1'); P.r(25, 27, 3, 2, 'un1');
+        P.px(5, 19, 'un2'); P.r(5, 16, 3, 3, 'sk0'); P.r(28, 16, 3, 3, 'sk0');
+      }
     });
   }
 
   TEAM.forEach(m => FACES.forEach(f => reg(`${m.id}_${f}`, drawChar(m, f))));
 
-  window.PX = { C, col, make, fromMap, halo, reg, SPR, TEAM, FACES, outline };
+  window.PX = { C, col, make, fromMap, halo, reg, SPR, TEAM, FACES, outline, CHAR_SCALE: 2 };
 })();
