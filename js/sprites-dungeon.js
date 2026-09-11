@@ -81,6 +81,19 @@
     '..wwwwwwww..',
   ], { w: 'cr', s: 'cr2', n: 'nv2' }));
 
+  reg('squad', fromMap([
+    'bbbbbbbbb',
+    'bhbbybbbb',
+    'bhbyyybbb',
+    'bbyyyyybb',
+    'bbbyyybbb',
+    'bbbbybbbb',
+    '.bbbbbbb.',
+    '..bbbbb..',
+    '...bbb...',
+    '....b....',
+  ], { b: 'bl1', h: 'bl4', y: 'go2' }));
+
   reg('check', fromMap([
     '........g', '.......gg', '......gg.', 'g....gg..', 'gg..gg...', '.gggg....', '..gg.....',
   ], { g: 'gr2' }));

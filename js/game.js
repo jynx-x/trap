@@ -4,6 +4,7 @@
   const { div, sp, icon } = SC;
   const SPR = PX.SPR;
   const ui = $('ui');
+  const WIKI_URL = 'https://app.notion.com/p/Visual-Systems-Wiki-26356f01f431808494cffc6f411b129e?source=copy_link';
 
   const S = {
     phase: 'intro', mission1: false, mission2: false, mission3: false,
@@ -33,6 +34,9 @@
   const renderMute = () => { muteBtn.style.backgroundImage = `url(${SPR[S.soundEnabled ? 'spkOn' : 'spkOff'].url})`; };
   muteBtn.onclick = e => { e.stopPropagation(); S.soundEnabled = !S.soundEnabled; SND.init(); SND.setEnabled(S.soundEnabled); renderMute(); };
   renderMute();
+
+  /* ---------- team badge: always on screen ---------- */
+  div('', $('stage'), '', `${icon('squad', 3)}<div><b>VISUAL SYSTEMS</b><span>SQUAD</span></div>`).id = 'squad';
 
   const show = name => ['meadow', 'dungeon', 'victory'].forEach(n => { $(n).hidden = n !== name; });
 
@@ -479,10 +483,12 @@
       <div class="ko" style="font-size:14px;margin-top:6px;color:var(--cr)">${rank[1]}</div>`);
 
     const wrap = div('abs', ui, 'left:0;right:0;top:458px;display:flex;justify-content:center;z-index:5');
-    const again = document.createElement('button');
-    again.className = 'pbtn gold'; again.style.position = 'relative'; again.style.fontSize = '18px'; again.style.padding = '18px 30px 16px';
-    again.innerHTML = '↻ PLAY AGAIN'; wrap.appendChild(again);
-    again.onclick = () => { again.classList.add('down'); SND.click(); startGame(); };
+    const go = document.createElement('a');
+    go.className = 'pbtn gold'; go.href = WIKI_URL; go.rel = 'noopener';
+    go.target = window.self === window.top ? '_self' : '_blank'; // inside an embed (e.g. Notion) Notion can't load in the iframe → new tab
+    go.style.cssText = 'position:relative;font-size:18px;padding:18px 30px 16px;text-decoration:none';
+    go.innerHTML = 'ESCAPE SUCCESS ▶'; wrap.appendChild(go);
+    go.onclick = () => { go.classList.add('down'); SND.click(); };
 
     await sleep(900);
     for (let i = 0; i < 5; i++) {
